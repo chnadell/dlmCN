@@ -37,6 +37,7 @@ class TrainValueHook(Hook):
         self.verb_step = verb_step
         self.loss = loss
         self.write_summary = write_summary
+        self.value_name = value_name
         if self.write_summary:
             assert ckpt_dir is not None
             self.train_mse_summary = HookValueSummary(value_name)
@@ -53,7 +54,7 @@ class TrainValueHook(Hook):
         if self.step % self.verb_step == 0:
             loss_val = sess.run(self.loss)
             if self.verb:
-                print('Step {}, loss: {:.3f}'.format(self.step, loss_val))
+                print('Step {}, {}: {:.3f}'.format(self.step, self.value_name, loss_val))
             if self.write_summary:
                 self.train_mse_summary.log(loss_val, self.step, sess, writer)
 

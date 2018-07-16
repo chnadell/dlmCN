@@ -11,7 +11,7 @@ FC_FILTERS = (50, 100, 500, 50)
 TCONV_DIMS = (100, 200, 400)
 TCONV_FILTERS = (32, 16, 8)
 ENCODE_CONV_FILTERS = (8, 16, 32)
-ENCODE_FC_FILTERS = (500, 100, 10)
+ENCODE_FC_FILTERS = (1000, 200, 10)
 X_RANGE = [0, 1]
 Y_RANGE = [i for i in range(2, 1003)]
 CROSS_VAL = 5
@@ -90,7 +90,7 @@ def main(flags):
     train_g_fake_hook = network_helper.TrainValueHook(flags.verb_step, ntwk.loss[2], ckpt_dir=ntwk.ckpt_dir,
                                                       write_summary=True, value_name='g_loss_fake')
     lr_hook = network_helper.TrainValueHook(flags.verb_step, ntwk.learn_rate, ckpt_dir=ntwk.ckpt_dir,
-                                            write_summary=True, value_name='learning_rate')
+                                            write_summary=True, value_name='learning_rate', verb=False)
     valid_hook = network_helper.ValidationHook(flags.eval_step, valid_init_op, ntwk.labels, ntwk.logits[1], ntwk.loss[1],
                                                ckpt_dir=ntwk.ckpt_dir, write_summary=True)
     # train the network
