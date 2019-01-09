@@ -7,11 +7,13 @@ import network_helper
 
 
 INPUT_SIZE = 2
+
+
 FC_FILTERS = (50, 100, 500, 50)
 TCONV_DIMS = (50, 150, 300)
 TCONV_FILTERS = (16, 8, 4)
-X_RANGE = [0, 1]
-Y_RANGE = [i for i in range(2, 1003)]
+X_RANGE = [0, 7]
+Y_RANGE = [i for i in range(8, 2002+8)]
 CROSS_VAL = 5
 VAL_FOLD = 0
 BATCH_SIZE = 20
@@ -22,8 +24,8 @@ TRAIN_STEP = 6000
 LEARN_RATE = 1e-4
 DECAY_STEP = 4000
 DECAY_RATE = 0.5
-TRAIN_FILE = 'TrainDataV9.txt'
-VALID_FILE = 'TestDataV9.txt'
+TRAIN_FILE = 'bp2_OutMod.csv'
+VALID_FILE = 'bp2_OutMod.csv'
 
 
 def read_flag():
