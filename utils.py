@@ -98,6 +98,31 @@ def conv1d_transpose(
         name=name)
     return array_ops.squeeze(result, [spatial_start_dim])
 
+def conv1d_transpose_wrap(value,
+                          filter,
+                          output_shape,
+                          stride,
+                          padding="SAME",
+                          data_format="NWC",
+                          name=None):
+    """Wrap the built-in (contrib) conv1d_transpose function so that output
+    has a batch size determined at runtime, rather than being fixed by whatever
+    batch size was used during training"""
+
+    dyn_input_shape = tf.shape(value)
+    batch_size = dyn_input_shape[0]
+    output_shape = tf.stack([batch_size, output_shape[1], output_shape[2]])
+
+    return tf.contrib.nn.conv1d_transpose(
+        value,
+        filter,
+        output_shape,
+        stride,
+        padding=padding,
+        data_format=data_format,
+        name=name
+    )
+
 
 def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=False):
     shape = input_.get_shape().as_list()
@@ -132,7 +157,7 @@ def my_model_fn(features, batch_size, fc_filters, tconv_dims, tconv_filters):
         stride = up_size // feature_dim
         feature_dim = up_size
         f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
-        up = conv1d_transpose(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
+        up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         last_filter = up_filter
 
     up = tf.layers.conv1d(up, 1, 1, activation=None, name='conv_final')
@@ -161,7 +186,7 @@ def my_model_fn_linear(features, batch_size, fc_filters, tconv_dims, tconv_filte
         stride = up_size // feature_dim
         feature_dim = up_size
         f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
-        up = conv1d_transpose(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
+        up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         last_filter = up_filter
 
     up = tf.layers.conv1d(up, 1, 1, activation=None, name='conv_final')
@@ -190,7 +215,7 @@ def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tcon
         stride = up_size // feature_dim
         feature_dim = up_size
         f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
-        up = conv1d_transpose(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
+        up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         up = tf.layers.conv1d(up, up_filter, 3, activation=tf.nn.leaky_relu, name='conv_up{}'.format(cnt),
                               padding='same')
         last_filter = up_filter
