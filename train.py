@@ -12,14 +12,14 @@ INPUT_SIZE = 2
 FC_FILTERS = (50, 100, 500, 50)
 TCONV_DIMS = (50, 150, 300)
 TCONV_FILTERS = (16, 8, 4)
-X_RANGE = [0, 7]
-Y_RANGE = [i for i in range(8, 2002+8)]
+X_RANGE = [i for i in range(2, 10)]
+Y_RANGE = [i for i in range(10, 2011)]
 CROSS_VAL = 5
 VAL_FOLD = 0
 BATCH_SIZE = 20
-SHUFFLE_SIZE = 1
+SHUFFLE_SIZE = 100
 VERB_STEP = 25
-EVAL_STEP = 10
+EVAL_STEP = 250
 TRAIN_STEP = 6000
 LEARN_RATE = 1e-4
 DECAY_STEP = 4000
@@ -63,12 +63,14 @@ def main(flags):
         output_size = flags.fc_filters[-1]
     else:
         output_size = flags.tconv_dims[-1]
-    reader = data_reader.DataReader(input_size=flags.input_size, output_size=output_size,
-                                    x_range=flags.x_range, y_range=flags.y_range, cross_val=flags.cross_val,
-                                    val_fold=flags.val_fold, batch_size=flags.batch_size,
-                                    shuffle_size=flags.shuffle_size)
-    features, labels, train_init_op, valid_init_op = reader.get_data_holder_and_init_op(
-        (flags.train_file, flags.valid_file))
+    features, labels, train_init_op, valid_init_op = data_reader.read_data(input_size=flags.input_size,
+                                                                           output_size=output_size,
+                                                                           x_range=flags.x_range,
+                                                                           y_range=flags.y_range,
+                                                                           cross_val=flags.cross_val,
+                                                                           val_fold=flags.val_fold,
+                                                                           batch_size=flags.batch_size,
+                                                                           shuffle_size=flags.shuffle_size)
 
     # make network
     ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn, flags.batch_size,

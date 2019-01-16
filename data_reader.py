@@ -6,7 +6,7 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.model_selection import KFold
 
-def try_thing(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0, batch_size=100,
+def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0, batch_size=100,
                  shuffle_size=100, data_dir=os.path.dirname(__file__), rand_seed=1234):
     print('try a thing')
     """
@@ -47,8 +47,8 @@ def try_thing(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
         for params, curve in zip(ftr_array.values, lbl_array.values):
             ftr.append(curve)
             lbl.append(params)
-    ftr = np.array(ftr)
-    lbl = np.array(lbl)
+    ftr = np.array(ftr, dtype='float32')
+    lbl = np.array(lbl, dtype='float32')
 
     print('downsampling output curves')
     # resample the output curve so that there are not so many output points
@@ -79,7 +79,7 @@ def try_thing(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
 
 if __name__ == '__main__':
     print('testing read_data')
-    try_thing(input_size=2,
+    read_data(input_size=2,
               output_size=300,
               x_range=[i for i in range(2, 10)],
               y_range=[i for i in range(10, 2011)],
