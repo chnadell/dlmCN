@@ -10,22 +10,25 @@ import network_helper
 
 
 INPUT_SIZE = 2
-X_RANGE = [0, 1]
-Y_RANGE = [i for i in range(2, 1003)]
+FC_FILTERS = (50, 100, 500, 50)
+TCONV_DIMS = (50, 150, 300)
+TCONV_FILTERS = (16, 8, 4)
+X_RANGE = [i for i in range(2, 10)]
+Y_RANGE = [i for i in range(10, 2011)]
 CROSS_VAL = 5
 VAL_FOLD = 0
 BATCH_SIZE = 20
-SHUFFLE_SIZE = 5
+SHUFFLE_SIZE = 100
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 1500
-LEARN_RATE = 1e-3
-DECAY_STEP = 10000
-DECAY_RATE = 0.96
-TRAIN_FILE = 'TrainDataV9.txt'
-VALID_FILE = 'TestDataV9.txt'
+TRAIN_STEP = 6000*3
+LEARN_RATE = 1e-4
+DECAY_STEP = 4000
+DECAY_RATE = 0
+# TRAIN_FILE = 'TrainDataV9.txt'
+# VALID_FILE = 'TestDataV9.txt'
 FORCE_RUN =True
-MODEL_NAME = '20180705_125935'
+MODEL_NAME = '20190117_205753'
 
 
 def read_flag():
@@ -47,8 +50,8 @@ def read_flag():
                         help='decay learn rate by multiplying this factor')
     parser.add_argument('--force-run', default=FORCE_RUN, type=bool, help='force it to rerun')
     parser.add_argument('--model-name', default=MODEL_NAME, type=str, help='name of the model')
-    parser.add_argument('--train-file', default=TRAIN_FILE, type=str, help='name of the training file')
-    parser.add_argument('--valid-file', default=VALID_FILE, type=str, help='name of the validation file')
+    # parser.add_argument('--train-file', default=TRAIN_FILE, type=str, help='name of the training file')
+    # parser.add_argument('--valid-file', default=VALID_FILE, type=str, help='name of the validation file')
 
     flags = parser.parse_args()
     return flags
@@ -79,13 +82,14 @@ def main(flags):
         output_size = fc_filters[-1]
     else:
         output_size = tconv_dims[-1]
-    reader = data_reader.DataReader(input_size=flags.input_size, output_size=output_size,
-                                    x_range=flags.x_range, y_range=flags.y_range, cross_val=flags.cross_val,
-                                    val_fold=flags.val_fold, batch_size=flags.batch_size,
-                                    shuffle_size=flags.shuffle_size)
-    features, labels, train_init_op, valid_init_op = reader.get_data_holder_and_init_op(
-        (flags.train_file, flags.valid_file)
-    )
+    features, labels, train_init_op, valid_init_op = data_reader.read_data(input_size=flags.input_size,
+                                                                           output_size=output_size,
+                                                                           x_range=flags.x_range,
+                                                                           y_range=flags.y_range,
+                                                                           cross_val=flags.cross_val,
+                                                                           val_fold=flags.val_fold,
+                                                                           batch_size=flags.batch_size,
+                                                                           shuffle_size=flags.shuffle_size)
 
     # make network
     ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn, flags.batch_size,
@@ -93,7 +97,7 @@ def main(flags):
                                     tconv_filters=tconv_filters, learn_rate=flags.learn_rate,
                                     decay_step=flags.decay_step, decay_rate=flags.decay_rate, make_folder=False)
 
-    # evaluate the results if the results does not exist or user force to re-run evaluation
+    # evaluate the results if the results do not exist or user force to re-run evaluation
     save_file = os.path.join(os.path.dirname(__file__), 'data', 'test_pred_{}.csv'.format(flags.model_name))
     if FORCE_RUN or (not os.path.exists(save_file)):
         print('Evaluating the model ...')
