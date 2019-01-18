@@ -153,7 +153,8 @@ def my_model_fn(features, batch_size, fc_filters, tconv_dims, tconv_filters):
 
     last_filter = 1
     for cnt, (up_size, up_filter) in enumerate(zip(tconv_dims, tconv_filters)):
-        assert up_size%feature_dim == 0
+        assert up_size%feature_dim == 0, "up_size={} while feature_dim={} (cnt={})! " \
+                                        "Thus mod is {}".format(up_size, feature_dim, cnt, up_size%feature_dim)
         stride = up_size // feature_dim
         feature_dim = up_size
         f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
