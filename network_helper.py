@@ -173,7 +173,7 @@ class HookCurvePlotSummary(object):
             ax.plot(truth[fig_idx[i], :], label='truth')
             ax.plot(pred[fig_idx[i], :], label='pred')
             ax.legend()
-            mse = np.sum(np.square(truth[fig_idx[i], :] - pred[fig_idx[i], :]))
+            mse = np.mean(np.square(truth[fig_idx[i], :] - pred[fig_idx[i], :]))
             plt.title('Step {}, MSE={:.3f}'.format(step, mse))
             fig.tight_layout()
 
