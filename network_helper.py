@@ -60,10 +60,10 @@ class TrainValueHook(Hook):
 
 class ValidationHook(Hook):
     """
-    This hook monitors performance on the valiation set
+    This hook monitors performance on the validation set
     """
     def __init__(self, valid_step, valid_init_op, truth, pred, loss, ckpt_dir=None, write_summary=False,
-                 curve_num=6):
+                 curve_num=5):
         """
         Initialize the hook
         :param valid_step: # steps between evaluations
