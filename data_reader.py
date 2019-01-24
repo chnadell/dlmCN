@@ -8,7 +8,6 @@ from sklearn.model_selection import KFold
 
 def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0, batch_size=100,
                  shuffle_size=100, data_dir=os.path.dirname(__file__), rand_seed=1234):
-    print('try a thing')
     """
       :param input_size: input size of the arrays
       :param output_size: output size of the arrays
@@ -32,7 +31,7 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     # get data files
     print('getting data files')
     train_data_files = []
-    for file in os.listdir(os.path.join(data_dir, 'data')):
+    for file in os.listdir(os.path.join(data_dir, 'dataIn')):
         if file.endswith('.csv'):
             train_data_files.append(file)
 
@@ -41,18 +40,25 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     lbl = []
     for file_name in train_data_files:
         # import full arrays
-        ftr_array = pd.read_csv(os.path.join(data_dir, 'data', file_name), delimiter=',', usecols=x_range)
-        lbl_array = pd.read_csv(os.path.join(data_dir, 'data', file_name), delimiter=',', usecols=y_range)
+        ftr_array = pd.read_csv(os.path.join(data_dir, 'dataIn', file_name), delimiter=',', usecols=x_range)
+        lbl_array = pd.read_csv(os.path.join(data_dir, 'dataIn', file_name), delimiter=',', usecols=y_range)
         # append each data point to ftr and lbl
         for params, curve in zip(ftr_array.values, lbl_array.values):
-            ftr.append(curve)
-            lbl.append(params)
+            ftr.append(params)
+            lbl.append(curve)
     ftr = np.array(ftr, dtype='float32')
     lbl = np.array(lbl, dtype='float32')
 
+    print('total number of samples is {}'.format(len(ftr)))
+
     print('downsampling output curves')
     # resample the output curve so that there are not so many output points
-    lbl = scipy.signal.resample(lbl, output_size, axis=1)
+    lbl = scipy.signal.resample(lbl, output_size+20, axis=1)
+    # remove the ringing that occurs on the end of the spectra due to the Fourier method used by scipy
+    nPoints = len(lbl[1, :])
+    lbl = np.delete(lbl, [0,1,2,3,4,5,6,7,8,9,
+                          nPoints - 10, nPoints - 9, nPoints - 8, nPoints - 7, nPoints - 6, nPoints - 5, nPoints - 4,
+                          nPoints - 3, nPoints - 2, nPoints - 1], axis=1)
 
     # determine lengths of training and validation sets
     num_data_points = len(ftr)
