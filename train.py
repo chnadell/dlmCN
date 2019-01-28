@@ -7,25 +7,23 @@ import network_helper
 
 
 INPUT_SIZE = 2
-
-
-FC_FILTERS = (50, 100, 500, 50)
-TCONV_DIMS = (50, 150, 300)
-TCONV_FILTERS = (16, 8, 4)
-X_RANGE = [i for i in range(2, 10)]
-Y_RANGE = [i for i in range(10, 2011)]
+FC_FILTERS = (100, 500, 2000, 4000, 1000, 150)
+TCONV_DIMS = (150, 300)
+TCONV_FILTERS = (32, 16)
 CROSS_VAL = 5
 VAL_FOLD = 0
-BATCH_SIZE = 20
-SHUFFLE_SIZE = 100
+BATCH_SIZE = 10
+SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 6000
+TRAIN_STEP = 9000*2.5
 LEARN_RATE = 1e-4
-DECAY_STEP = 4000
-DECAY_RATE = 0.5
-TRAIN_FILE = 'bp2_OutMod.csv'
-VALID_FILE = 'bp2_OutMod.csv'
+DECAY_STEP = 8000
+DECAY_RATE = 0.1
+X_RANGE = [i for i in range(2, 10)]
+Y_RANGE = [i for i in range(10, 2011)]
+# TRAIN_FILE = 'bp2_OutMod.csv'
+# VALID_FILE = 'bp2_OutMod.csv'
 
 
 def read_flag():
@@ -50,8 +48,8 @@ def read_flag():
                         help='decay learning rate at this number of steps')
     parser.add_argument('--decay-rate', default=DECAY_RATE, type=float,
                         help='decay learn rate by multiplying this factor')
-    parser.add_argument('--train-file', default=TRAIN_FILE, type=str, help='name of the training file')
-    parser.add_argument('--valid-file', default=VALID_FILE, type=str, help='name of the validation file')
+    # parser.add_argument('--train-file', default=TRAIN_FILE, type=str, help='name of the training file')
+    # parser.add_argument('--valid-file', default=VALID_FILE, type=str, help='name of the validation file')
 
     flags = parser.parse_args()
     return flags
