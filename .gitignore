@@ -1,6 +1,8 @@
 data/*
+dataIn/*
 models/*
 figs/*
+!dataIn/.gitkeep
 !data/.gitkeep
 !models/.gitkeep
 !figs/.gitkeep
