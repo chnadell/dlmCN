@@ -98,6 +98,61 @@ def conv1d_transpose(
         name=name)
     return array_ops.squeeze(result, [spatial_start_dim])
 
+# Set of functions for implementing the tensor module from Ng et al.
+# https://cs.stanford.edu/~danqi/papers/nips2013.pdf
+# closer to implementation by Ma et al.
+# https://pubs.acs.org/doi/10.1021/acsnano.8b03569
+
+# repeats a rank 1 tensor, used to compute
+# multiplication with the rank 3 kernel
+def repeat_2d(input_, axis, repeat_num):
+    orig_shape = input_.get_shape().as_list()
+    input_ = tf.tile(input_, (repeat_num, 1))
+    orig_shape.insert(axis, repeat_num)
+    return tf.reshape(input_, shape=orig_shape)
+
+
+# defines a tensor layer. rank 3 kernel, rank 2 kernel, and a rank 1 bias vector
+# are summed to get the output
+def tensor_layer(input_, out_dim, layer_id):
+    # D is considered column vector here, not the row vector as in the paper
+
+    # define kernels
+    in_dim = input_.get_shape().as_list()[0]
+    var_w = tf.get_variable(name='w_k_{}'.format(layer_id), shape=[out_dim, in_dim, in_dim],
+                            initializer=tf.keras.initializers.glorot_normal())
+    var_v = tf.get_variable(name='v_k_{}'.format(layer_id), shape=[out_dim, in_dim],
+                            initializer=tf.keras.initializers.glorot_normal())
+    var_b = tf.get_variable(name='v_b_{}'.format(layer_id), shape=[out_dim, 1])
+    var_d = tf.expand_dims(input_, 0)
+
+    # D^T * W_k * D
+    temp_1 = tf.matmul(repeat_2d(var_d, 0, out_dim), var_w)
+    temp_1 = tf.matmul(temp_1, repeat_2d(tf.transpose(var_d), 0, out_dim))
+    temp_1 = tf.expand_dims(tf.squeeze(temp_1), axis=-1)
+
+    # V_k*D
+    temp_2 = tf.matmul(var_v, tf.transpose(var_d))
+
+    return tf.nn.relu(temp_1 + temp_2 + var_b)
+
+# allows us to branch the input data into multiple tensor layers,
+# then follow with fully connnected layers
+def tensor_module(input_, out_dim, n_filter, n_branch):
+    vec_concat = []
+    # generate a tensor layer for each branch
+    for i in range(n_branch):
+        fc = tensor_layer(input_, out_dim, i)
+        # send tensor layer output to a dense layer
+        for cnt, filters in enumerate(n_filter):
+            fc = tf.layers.dense(inputs=tf.transpose(fc), units=filters, activation=None,
+                                 name='fc{}_branch{}'.format(cnt, i),
+                                 kernel_initializer=tf.random_normal_initializer(stddev=0.02))
+        # concatentate dense layer output to a single vector
+        vec_concat.append(fc)
+    return tf.transpose(tf.concat(vec_concat, 1))
+
+"""conv1d_tranpose function"""
 def conv1d_transpose_wrap(value,
                           filter,
                           output_shape,
@@ -219,6 +274,36 @@ def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tcon
         up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         up = tf.layers.conv1d(up, up_filter, 3, activation=tf.nn.leaky_relu, name='conv_up{}'.format(cnt),
                               padding='same')
+        last_filter = up_filter
+
+    up = tf.layers.conv1d(up, 1, 1, activation=None, name='conv_final')
+
+    return tf.squeeze(up, axis=2)
+
+def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters):
+    """
+    My customized model function
+    :param features: input features
+    :param output_size: dimension of output data
+    :return:
+    """
+    fc = features
+    for cnt, filters in enumerate(fc_filters):
+        fc = tf.layers.dense(inputs=fc, units=filters, activation=tf.nn.leaky_relu, name='fc{}'.format(cnt),
+                             kernel_initializer=tf.random_normal_initializer(stddev=0.02))
+
+
+    up = tf.expand_dims(fc, axis=2)
+    feature_dim = fc_filters[-1]
+
+    last_filter = 1
+    for cnt, (up_size, up_filter) in enumerate(zip(tconv_dims, tconv_filters)):
+        assert up_size%feature_dim == 0, "up_size={} while feature_dim={} (cnt={})! " \
+                                        "Thus mod is {}".format(up_size, feature_dim, cnt, up_size%feature_dim)
+        stride = up_size // feature_dim
+        feature_dim = up_size
+        f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
+        up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         last_filter = up_filter
 
     up = tf.layers.conv1d(up, 1, 1, activation=None, name='conv_final')
