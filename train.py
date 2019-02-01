@@ -10,6 +10,8 @@ INPUT_SIZE = 2
 FC_FILTERS = (100, 500, 2000, 4000, 1000, 150)
 TCONV_DIMS = (150, 300)
 TCONV_FILTERS = (32, 16)
+N_FILTER = 5
+N_BRANCH = 3
 CROSS_VAL = 5
 VAL_FOLD = 0
 BATCH_SIZE = 10
@@ -34,6 +36,8 @@ def read_flag():
                         help='dimensionality of data after each transpose convolution')
     parser.add_argument('--tconv-filters', type=tuple, default=TCONV_FILTERS,
                         help='#filters at each transpose convolution')
+    parser.add_argument('--n-filter', type=int, default=N_FILTER, help='#neurons in the tensor module'),
+    parser.add_argument('--n-branch', type=int, default=N_BRANCH, help='#parallel branches in the tensor module')
     parser.add_argument('--x-range', type=list, default=X_RANGE, help='columns of input parameters')
     parser.add_argument('--y-range', type=list, default=Y_RANGE, help='columns of output parameters')
     parser.add_argument('--cross-val', type=int, default=CROSS_VAL, help='# cross validation folds')
@@ -71,9 +75,10 @@ def main(flags):
                                                                            shuffle_size=flags.shuffle_size)
 
     # make network
-    ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn, flags.batch_size,
+    ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn_tens, flags.batch_size,
                                     fc_filters=flags.fc_filters, tconv_dims=flags.tconv_dims,
-                                    tconv_filters=flags.tconv_filters, learn_rate=flags.learn_rate,
+                                    tconv_filters=flags.tconv_filters, n_filter=flags.n_filter,
+                                    n_branch=flags.n_branch, learn_rate=flags.learn_rate,
                                     decay_step=flags.decay_step, decay_rate=flags.decay_rate)
     # define hooks for monitoring training
     train_hook = network_helper.TrainValueHook(flags.verb_step, ntwk.loss,
