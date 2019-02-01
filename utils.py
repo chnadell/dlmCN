@@ -280,7 +280,7 @@ def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tcon
 
     return tf.squeeze(up, axis=2)
 
-def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters):
+def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters, n_filter, n_branch):
     """
     My customized model function
     :param features: input features
@@ -288,11 +288,7 @@ def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters
     :return:
     """
     fc = features
-    for cnt, filters in enumerate(fc_filters):
-        fc = tf.layers.dense(inputs=fc, units=filters, activation=tf.nn.leaky_relu, name='fc{}'.format(cnt),
-                             kernel_initializer=tf.random_normal_initializer(stddev=0.02))
-
-
+    fc = tensor_module(fc, 5, n_filter, n_branch)
     up = tf.expand_dims(fc, axis=2)
     feature_dim = fc_filters[-1]
 
