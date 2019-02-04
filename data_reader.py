@@ -34,7 +34,7 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     for file in os.listdir(os.path.join(data_dir, 'dataIn')):
         if file.endswith('.csv'):
             train_data_files.append(file)
-
+    print(train_data_files)
     # get data
     ftr = []
     lbl = []
