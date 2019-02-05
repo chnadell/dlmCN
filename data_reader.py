@@ -79,7 +79,7 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     iterator = tf.data.Iterator.from_structure(dataset_train.output_types, dataset_train.output_shapes)
     features, labels = iterator.get_next()
     train_init_op = iterator.make_initializer(dataset_train)
-    valid_init_op = iterator.make_initializer(dataset_valid)
+    valid_init_op = iterator.make_initializer(dataset_valid, drop_remainder=True)
 
     return features, labels, train_init_op, valid_init_op
 
