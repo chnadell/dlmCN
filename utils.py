@@ -187,7 +187,7 @@ def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=
             return tf.matmul(input_, matrix) + bias
 
 
-def my_model_fn(features, batch_size, fc_filters, tconv_dims, tconv_filters):
+def my_model_fn(features, batch_size, fc_filters, tconv_dims, tconv_filters, n_filter, n_branch):
     """
     My customized model function
     :param features: input features
