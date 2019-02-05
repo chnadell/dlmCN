@@ -106,11 +106,12 @@ def conv1d_transpose(
 # repeats a rank 1 tensor, used to compute
 # multiplication with the rank 3 kernel
 def repeat_2d(input_, axis, batch_size, repeat_num):
-    orig_shape = input_.get_shape().as_list()
-    input_ = tf.tile(input_, (1, repeat_num, 1))
-    orig_shape.insert(axis, repeat_num)
-    orig_shape[orig_shape.index(None)] = batch_size
-    return tf.reshape(input_, shape=orig_shape)
+    with tf.variable_scope('repeat_2d'):
+        orig_shape = input_.get_shape().as_list()
+        input_ = tf.tile(input_, (1, repeat_num, 1))
+        orig_shape.insert(axis, repeat_num)
+        orig_shape[orig_shape.index(None)] = batch_size
+        return tf.reshape(input_, shape=orig_shape)
 
 
 def tensor_layer(input_, out_dim, batch_size, layer_id):
@@ -138,14 +139,16 @@ def tensor_layer(input_, out_dim, batch_size, layer_id):
 
 def tensor_module(input_, out_dim, batch_size, n_filter, n_branch):
     vec_concat = []
-    for i in range(n_branch):
-        fc = tensor_layer(input_, out_dim, batch_size, i)
-        for cnt, filters in enumerate(n_filter):
-            fc = tf.layers.dense(inputs=tf.transpose(fc), units=filters, activation=None,
-                                 name='fc{}_branch{}'.format(cnt, i),
-                                 kernel_initializer=tf.random_normal_initializer(stddev=0.02))
-        vec_concat.append(fc)
-    return tf.transpose(tf.concat(vec_concat, 1))
+    with tf.variable_scope('tensor_module'):
+        for i in range(n_branch):
+            with tf.variable_scope('tensor_layer{}'.format(i)):
+                fc = tensor_layer(input_, out_dim, batch_size, i)
+            for cnt, filters in enumerate(n_filter):
+                with tf.variable_scope('fc{}_branch{}'.format(i, cnt)):
+                    fc = tf.layers.dense(inputs=tf.transpose(fc), units=filters, activation=None,
+                                         kernel_initializer=tf.random_normal_initializer(stddev=0.02))
+            vec_concat.append(fc)
+        return tf.transpose(tf.concat(vec_concat, 1))
 
 """conv1d_tranpose function"""
 def conv1d_transpose_wrap(value,

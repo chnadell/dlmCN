@@ -74,7 +74,7 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
 
     dataset_train = dataset_train.repeat()
     dataset_train = dataset_train.batch(batch_size)
-    dataset_valid = dataset_valid.batch(batch_size)
+    dataset_valid = dataset_valid.batch(batch_size, drop_remainder=True)
 
     iterator = tf.data.Iterator.from_structure(dataset_train.output_types, dataset_train.output_shapes)
     features, labels = iterator.get_next()
