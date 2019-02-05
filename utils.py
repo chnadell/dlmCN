@@ -106,46 +106,49 @@ def conv1d_transpose(
 # repeats a rank 1 tensor, used to compute
 # multiplication with the rank 3 kernel
 def repeat_2d(input_, axis, batch_size, repeat_num):
-    orig_shape = input_.get_shape().as_list()
-    input_ = tf.tile(input_, (1, repeat_num, 1))
-    orig_shape.insert(axis, repeat_num)
-    orig_shape[orig_shape.index(None)] = batch_size
-    return tf.reshape(input_, shape=orig_shape)
+    with tf.variable_scope('repeat_2d'):
+        orig_shape = input_.get_shape().as_list()
+        input_ = tf.tile(input_, (1, repeat_num, 1))
+        orig_shape.insert(axis, repeat_num)
+        orig_shape[orig_shape.index(None)] = batch_size
+        return tf.reshape(input_, shape=orig_shape)
 
 
 def tensor_layer(input_, out_dim, batch_size, layer_id):
-    # D is considered column vector here, not the row vector as in the paper
-    in_dim = input_.get_shape().as_list()[1]
-    var_w = tf.get_variable(name='w_k_{}'.format(layer_id), shape=[out_dim, in_dim, in_dim],
-                            initializer=tf.keras.initializers.glorot_normal())
-    var_w = tf.broadcast_to(var_w, [batch_size, out_dim, in_dim, in_dim])
+    with tf.variable_scope('tensor_layer'):
+        # D is considered column vector here, not the row vector as in the paper
+        in_dim = input_.get_shape().as_list()[1]
+        var_w = tf.get_variable(name='w_k_{}'.format(layer_id), shape=[out_dim, in_dim, in_dim],
+                                initializer=tf.keras.initializers.glorot_normal())
+        var_w = tf.broadcast_to(var_w, [batch_size, out_dim, in_dim, in_dim])
 
-    var_v = tf.get_variable(name='v_k_{}'.format(layer_id), shape=[out_dim, in_dim],
-                            initializer=tf.keras.initializers.glorot_normal())
-    var_v = tf.broadcast_to(var_v, [batch_size, out_dim, in_dim])
+        var_v = tf.get_variable(name='v_k_{}'.format(layer_id), shape=[out_dim, in_dim],
+                                initializer=tf.keras.initializers.glorot_normal())
+        var_v = tf.broadcast_to(var_v, [batch_size, out_dim, in_dim])
 
-    var_b = tf.get_variable(name='v_b_{}'.format(layer_id), shape=[out_dim, 1])
-    var_d = tf.expand_dims(input_, 1)
+        var_b = tf.get_variable(name='v_b_{}'.format(layer_id), shape=[out_dim, 1])
+        var_d = tf.expand_dims(input_, 1)
 
-    # D^T * W_k * D
-    temp_1 = tf.matmul(repeat_2d(var_d, 1, batch_size, out_dim), var_w)
-    temp_1 = tf.matmul(temp_1, repeat_2d(tf.transpose(var_d, perm=[0, 2, 1]), 1, batch_size, out_dim))
-    # V_k*D
-    temp_2 = tf.matmul(var_v, tf.transpose(var_d, perm=[0, 2, 1]))
+        # D^T * W_k * D
+        temp_1 = tf.matmul(repeat_2d(var_d, 1, batch_size, out_dim), var_w)
+        temp_1 = tf.matmul(temp_1, repeat_2d(tf.transpose(var_d, perm=[0, 2, 1]), 1, batch_size, out_dim))
+        # V_k*D
+        temp_2 = tf.matmul(var_v, tf.transpose(var_d, perm=[0, 2, 1]))
 
-    return tf.nn.relu(temp_1[:, :, 0, 0] + temp_2[:, :, 0] + tf.broadcast_to(var_b, [batch_size, out_dim, 1])[:, :, 0])
+        return tf.nn.relu(temp_1[:, :, 0, 0] + temp_2[:, :, 0] + tf.broadcast_to(var_b, [batch_size, out_dim, 1])[:, :, 0])
 
 
 def tensor_module(input_, out_dim, batch_size, n_filter, n_branch):
     vec_concat = []
-    for i in range(n_branch):
-        fc = tensor_layer(input_, out_dim, batch_size, i)
-        for cnt, filters in enumerate(n_filter):
-            fc = tf.layers.dense(inputs=tf.transpose(fc), units=filters, activation=None,
-                                 name='fc{}_branch{}'.format(cnt, i),
-                                 kernel_initializer=tf.random_normal_initializer(stddev=0.02))
-        vec_concat.append(fc)
-    return tf.transpose(tf.concat(vec_concat, 1))
+    with tf.variable_scope('tensor_module'):
+        for i in range(n_branch):
+            fc = tensor_layer(input_, out_dim, batch_size, i)
+            for cnt, filters in enumerate(n_filter):
+                fc = tf.layers.dense(inputs=tf.transpose(fc), units=filters, activation=None,
+                                     name='fc{}_branch{}'.format(cnt, i),
+                                     kernel_initializer=tf.random_normal_initializer(stddev=0.02))
+            vec_concat.append(fc)
+        return tf.transpose(tf.concat(vec_concat, 1))
 
 """conv1d_tranpose function"""
 def conv1d_transpose_wrap(value,
