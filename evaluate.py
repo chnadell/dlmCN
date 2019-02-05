@@ -3,23 +3,27 @@ import csv
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+
 import utils
 import data_reader
 import network_maker
 import network_helper
 
+plt.interactive(False)
 
 INPUT_SIZE = 2
 FC_FILTERS = (100, 500, 2000, 4000, 1000, 150)
 TCONV_DIMS = (150, 300)
 TCONV_FILTERS = (32, 16)
+N_FILTER = [5]
+N_BRANCH = 2
 CROSS_VAL = 5
 VAL_FOLD = 0
 BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 6993*2.2
+TRAIN_STEP = 7992*2.2
 LEARN_RATE = 1e-4
 DECAY_STEP = 8000
 DECAY_RATE = 0.1
@@ -28,7 +32,7 @@ Y_RANGE = [i for i in range(10, 2011)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
 FORCE_RUN =True
-MODEL_NAME = '20190131_022615'
+MODEL_NAME = '20190205_024754'
 
 
 def read_flag():
@@ -116,6 +120,7 @@ def main(flags):
     plt.savefig(os.path.join(os.path.dirname(__file__), 'data',
                              'fc_tconv_single_channel_result_cmp_{}.png'.format(flags.model_name)))
     plt.show()
+    print('FC + TCONV (Avg MSE={:.4e}'.format(np.mean(mse)))
 
 
 if __name__ == '__main__':
