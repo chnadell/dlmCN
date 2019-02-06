@@ -185,7 +185,7 @@ class HookCurvePlotSummary(object):
 
 def get_parameters(model_dir):
     def replace_str(s):
-        for char in [',', '(', ')']:
+        for char in [',', '(', ')', '[', ']']:
             s = s.replace(char, ' ')
         return s
 

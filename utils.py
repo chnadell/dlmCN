@@ -145,10 +145,10 @@ def tensor_module(input_, out_dim, batch_size, n_filter, n_branch):
                 fc = tensor_layer(input_, out_dim, batch_size, i)
             for cnt, filters in enumerate(n_filter):
                 with tf.variable_scope('fc{}_branch{}'.format(i, cnt)):
-                    fc = tf.layers.dense(inputs=tf.transpose(fc), units=filters, activation=None,
+                    fc = tf.layers.dense(inputs=fc, units=filters, activation=None,
                                          kernel_initializer=tf.random_normal_initializer(stddev=0.02))
             vec_concat.append(fc)
-        return tf.transpose(tf.concat(vec_concat, 1))
+        return tf.concat(vec_concat, 1)
 
 """conv1d_tranpose function"""
 def conv1d_transpose_wrap(value,
@@ -286,7 +286,7 @@ def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters
     :return:
     """
     fc = features
-    fc = tensor_module(fc,  fc_filters[0], batch_size, n_filter, n_branch)
+    fc = tensor_module(fc, fc_filters[0], batch_size, n_filter, n_branch)
 
     for cnt, filters in enumerate(fc_filters):
         fc = tf.layers.dense(inputs=fc, units=filters, activation=tf.nn.leaky_relu, name='fc{}'.format(cnt),
