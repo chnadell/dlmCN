@@ -23,7 +23,7 @@ BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 7992*2.2
+TRAIN_STEP = 9990*2.5
 LEARN_RATE = 1e-4
 DECAY_STEP = 8000
 DECAY_RATE = 0.1
@@ -31,8 +31,8 @@ X_RANGE = [i for i in range(2, 10)]
 Y_RANGE = [i for i in range(10, 2011)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
-FORCE_RUN =True
-MODEL_NAME = '20190205_024754'
+FORCE_RUN =False
+MODEL_NAME = '20190205_232255'
 
 
 def read_flag():
@@ -79,7 +79,7 @@ def compare_truth_pred(pred_file, truth_file):
 
 def main(flags):
     ckpt_dir = os.path.join(os.path.dirname(__file__), 'models', flags.model_name)
-    fc_filters, tconv_dims, tconv_filters = network_helper.get_parameters(ckpt_dir)
+    fc_filters, tconv_dims, tconv_filters, n_filter, n_branch = network_helper.get_parameters(ckpt_dir)
 
     # initialize data reader
     if len(tconv_dims) == 0:
@@ -96,8 +96,9 @@ def main(flags):
                                                                            shuffle_size=flags.shuffle_size)
 
     # make network
-    ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn, flags.batch_size,
+    ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn_tens, flags.batch_size,
                                     fc_filters=fc_filters, tconv_dims=tconv_dims,
+                                    n_filter=n_filter, n_branch=n_branch,
                                     tconv_filters=tconv_filters, learn_rate=flags.learn_rate,
                                     decay_step=flags.decay_step, decay_rate=flags.decay_rate, make_folder=False)
 
@@ -116,11 +117,11 @@ def main(flags):
     plt.hist(mse, bins=100)
     plt.xlabel('Mean Squared Error')
     plt.ylabel('cnt')
-    plt.suptitle('FC + TCONV (Avg MSE={:.4e}'.format(np.mean(mse)))
+    plt.suptitle('FC + TCONV (Avg MSE={:.4e})'.format(np.mean(mse)))
     plt.savefig(os.path.join(os.path.dirname(__file__), 'data',
                              'fc_tconv_single_channel_result_cmp_{}.png'.format(flags.model_name)))
     plt.show()
-    print('FC + TCONV (Avg MSE={:.4e}'.format(np.mean(mse)))
+    print('FC + TCONV (Avg MSE={:.4e})'.format(np.mean(mse)))
 
 
 if __name__ == '__main__':
