@@ -202,4 +202,10 @@ def get_parameters(model_dir):
         elif line[:13] == 'tconv_filters':
             line = replace_str(line)
             tconv_filters = tuple([int(s) for s in line.split() if s.isdigit()])
-    return fc_filters, tconv_dims, tconv_filters
+        elif line[:8] =='n_filter':
+            line = replace_str(line)
+            n_filter = [int(s) for s in line.split() if s.isdigit()]
+        elif line[:8] =='n_branch':
+            line = replace_str(line)
+            n_branch = [int(s) for s in line.split() if s.isdigit()]
+    return fc_filters, tconv_dims, tconv_filters, n_filter, n_branch[0]
