@@ -5,23 +5,22 @@ import data_reader
 import network_maker
 import network_helper
 
-
 INPUT_SIZE = 2
-FC_FILTERS = (100, 500, 2000, 4000, 1000, 5)
+FC_FILTERS = (100, 500, 2000, 4000, 1000, 150)
 TCONV_DIMS = (150, 300)
-TCONV_FILTERS = (32, 16)
+TCONV_FILTERS = (8, 4)
 N_FILTER = [5]
 N_BRANCH = 2
 CROSS_VAL = 5
 VAL_FOLD = 0
-BATCH_SIZE = 14
+BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 6993*2.2
+TRAIN_STEP = 9990*6
 LEARN_RATE = 1e-4
-DECAY_STEP = 8000
-DECAY_RATE = 0.1
+DECAY_STEP = 20000
+DECAY_RATE = 0.05
 X_RANGE = [i for i in range(2, 10)]
 Y_RANGE = [i for i in range(10, 2011)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
