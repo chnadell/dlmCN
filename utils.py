@@ -110,7 +110,7 @@ def repeat_2d(input_, axis, batch_size, repeat_num):
         orig_shape = input_.get_shape().as_list()
         input_ = tf.tile(input_, (1, repeat_num, 1))
         orig_shape.insert(axis, repeat_num)
-        orig_shape[orig_shape.index(None)] = batch_size
+        # orig_shape[orig_shape.index(None)] = batch_size
         return tf.reshape(input_, shape=orig_shape)
 
 
