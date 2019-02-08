@@ -26,51 +26,66 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     :param train_valid_tuple: if it's not none, it will be the names of train and valid files
     :return: feature and label read from csv files, one line each time
     """
-    np.random.seed(rand_seed)
 
     # get data files
+    def importData(directory):
+            # pull data into python, should be either for training set or eval set
+        train_data_files = []
+        for file in os.listdir(os.path.join(directory)):
+            if file.endswith('.csv'):
+                train_data_files.append(file)
+        print(train_data_files)
+        # get data
+        ftr = []
+        lbl = []
+        for file_name in train_data_files:
+            # import full arrays
+            ftr_array = pd.read_csv(os.path.join(directory, file_name), delimiter=',', usecols=x_range)
+            lbl_array = pd.read_csv(os.path.join(directory, file_name), delimiter=',', usecols=y_range)
+            # append each data point to ftr and lbl
+            for params, curve in zip(ftr_array.values, lbl_array.values):
+                ftr.append(params)
+                lbl.append(curve)
+        ftr = np.array(ftr, dtype='float32')
+        lbl = np.array(lbl, dtype='float32')
+        return ftr, lbl
     print('getting data files')
-    train_data_files = []
-    for file in os.listdir(os.path.join(data_dir, 'dataIn')):
-        if file.endswith('.csv'):
-            train_data_files.append(file)
-    print(train_data_files)
-    # get data
-    ftr = []
-    lbl = []
-    for file_name in train_data_files:
-        # import full arrays
-        ftr_array = pd.read_csv(os.path.join(data_dir, 'dataIn', file_name), delimiter=',', usecols=x_range)
-        lbl_array = pd.read_csv(os.path.join(data_dir, 'dataIn', file_name), delimiter=',', usecols=y_range)
-        # append each data point to ftr and lbl
-        for params, curve in zip(ftr_array.values, lbl_array.values):
-            ftr.append(params)
-            lbl.append(curve)
-    ftr = np.array(ftr, dtype='float32')
-    lbl = np.array(lbl, dtype='float32')
 
-    print('total number of samples is {}'.format(len(ftr)))
+    ftrTrain, lblTrain = importData(os.path.join(data_dir, 'dataIn'))
+    ftrTest, lblTest = importData(os.path.join(data_dir, 'dataIn', 'eval'))
+
+    print('total number of training samples is {}'.format(len(ftrTrain)))
+    print('total number of test samples is {}'.format(len(ftrTest)))
 
     print('downsampling output curves')
-    # resample the output curve so that there are not so many output points
-    lbl = scipy.signal.resample(lbl, output_size+20, axis=1)
+    # resample the output curves so that there are not so many output points
+    lblTrain = scipy.signal.resample(lblTrain, output_size+20, axis=1)
+    lblTest = scipy.signal.resample(lblTest, output_size+20, axis=1)
+
     # remove the ringing that occurs on the end of the spectra due to the Fourier method used by scipy
-    nPoints = len(lbl[1, :])
-    lbl = np.delete(lbl, [0,1,2,3,4,5,6,7,8,9,
+    nPoints = len(lblTrain[1, :])
+    lblTrain = np.delete(lblTrain, [0,1,2,3,4,5,6,7,8,9,
                           nPoints - 10, nPoints - 9, nPoints - 8, nPoints - 7, nPoints - 6, nPoints - 5, nPoints - 4,
                           nPoints - 3, nPoints - 2, nPoints - 1], axis=1)
 
+    nPoints = len(lblTest[1, :])
+    lblTest = np.delete(lblTest, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+                                    nPoints - 10, nPoints - 9, nPoints - 8, nPoints - 7, nPoints - 6, nPoints - 5,
+                                    nPoints - 4,
+                                    nPoints - 3, nPoints - 2, nPoints - 1], axis=1)
+
     # determine lengths of training and validation sets
-    num_data_points = len(ftr)
+    num_data_points = len(ftrTrain)
     train_length = int(.8 * num_data_points)
 
     print('generating TF dataset')
-    assert np.shape(ftr)[0] == np.shape(lbl)[0]
-    dataset_full = tf.data.Dataset.from_tensor_slices((ftr, lbl))
+    assert np.shape(ftrTrain)[0] == np.shape(lblTrain)[0]
+    assert np.shape(ftrTest)[0] == np.shape(lblTest)[0]
 
+    dataset_train = tf.data.Dataset.from_tensor_slices((ftrTrain, lblTrain))
+    dataset_valid = tf.data.Dataset.from_tensor_slices((ftrTest, lblTest))
     # shuffle then split into training and validation sets
-    dataset_full = dataset_full.shuffle(shuffle_size)
-    dataset_train, dataset_valid = (dataset_full.take(train_length), dataset_full.skip(train_length))
+    dataset_train = dataset_train.shuffle(shuffle_size)
 
     dataset_train = dataset_train.repeat()
     dataset_train = dataset_train.batch(batch_size, drop_remainder=True)
