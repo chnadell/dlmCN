@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import Grid
 
-model_name = '20180705_180250'
+model_name = '20190211_170250'
 pred_file = os.path.join(os.path.dirname(__file__), 'data', 'test_pred_{}.csv'.format(model_name))
 truth_file = os.path.join(os.path.dirname(__file__), 'data', 'test_truth.csv')
 
@@ -18,8 +18,8 @@ for fig_cnt in range(13):
             ax.plot(truth[fig_cnt*16+i, :], label='truth')
             ax.plot(pred[fig_cnt*16+i, :], label='pred')
             ax.legend()
-            mse = np.mean(np.absolute(truth[fig_cnt*16+i, :] - pred[fig_cnt*16+i, :]))
-            plt.text(0.6, 0.4, 'MAE={:.3f}'.format(mse), ha='center', va='center', transform=ax.transAxes)
+            mse = np.mean([dif**2 for dif in (truth[fig_cnt*16+i, :] - pred[fig_cnt*16+i, :])])
+            plt.text(0.6, 0.4, 'MSE={:.2E}'.format(mse), ha='center', va='center', transform=ax.transAxes)
         except IndexError:
             pass
     plt.tight_layout()
