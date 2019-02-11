@@ -53,7 +53,7 @@ class TrainValueHook(Hook):
         if self.step % self.verb_step == 0:
             loss_val = sess.run(self.loss)
             if self.verb:
-                print('Step {}, loss: {:.3f}'.format(self.step, loss_val))
+                print('Step {}, loss: {:.2E}'.format(self.step, loss_val))
             if self.write_summary:
                 self.train_mse_summary.log(loss_val, self.step, sess, writer)
 
@@ -108,7 +108,7 @@ class ValidationHook(Hook):
             except tf.errors.OutOfRangeError:
                 pass
             loss_mean = np.mean(loss_val)
-            print('Eval @ Step {}, loss: {:.3f}, duration {:.3f}s'.
+            print('Eval @ Step {}, loss: {:.2E}, duration {:.3f}s'.
                   format(self.step, loss_mean, time.time()-self.time_cnt))
             self.time_cnt = time.time()
             if self.write_summary:
