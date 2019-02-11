@@ -11,13 +11,15 @@ TCONV_DIMS = (150, 300)
 TCONV_FILTERS = (8, 4)
 N_FILTER = [5]
 N_BRANCH = 2
+REG_SCALE =.001
 CROSS_VAL = 5
 VAL_FOLD = 0
 BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 9990*6
+# TRAIN_STEP = 9990*6
+TRAIN_STEP = 100
 LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
@@ -37,6 +39,7 @@ def read_flag():
                         help='#filters at each transpose convolution')
     parser.add_argument('--n-filter', type=int, default=N_FILTER, help='#neurons in the tensor module'),
     parser.add_argument('--n-branch', type=int, default=N_BRANCH, help='#parallel branches in the tensor module')
+    parser.add_argument('--reg-scale', type=float, default=REG_SCALE, help='#scale for regularization of dense layers')
     parser.add_argument('--x-range', type=list, default=X_RANGE, help='columns of input parameters')
     parser.add_argument('--y-range', type=list, default=Y_RANGE, help='columns of output parameters')
     parser.add_argument('--cross-val', type=int, default=CROSS_VAL, help='# cross validation folds')
@@ -64,6 +67,7 @@ def main(flags):
         output_size = flags.fc_filters[-1]
     else:
         output_size = flags.tconv_dims[-1]
+
     features, labels, train_init_op, valid_init_op = data_reader.read_data(input_size=flags.input_size,
                                                                            output_size=output_size,
                                                                            x_range=flags.x_range,
@@ -77,7 +81,8 @@ def main(flags):
     ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn_tens, flags.batch_size,
                                     fc_filters=flags.fc_filters, tconv_dims=flags.tconv_dims,
                                     tconv_filters=flags.tconv_filters, n_filter=flags.n_filter,
-                                    n_branch=flags.n_branch, learn_rate=flags.learn_rate,
+                                    n_branch=flags.n_branch, reg_scale=flags.reg_scale,
+                                    learn_rate=flags.learn_rate,
                                     decay_step=flags.decay_step, decay_rate=flags.decay_rate)
     # define hooks for monitoring training
     train_hook = network_helper.TrainValueHook(flags.verb_step, ntwk.loss,

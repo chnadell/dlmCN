@@ -8,7 +8,7 @@ import tensorflow as tf
 class CnnNetwork(object):
     def __init__(self, features, labels, model_fn, batch_size, fc_filters=(5, 10, 15),
                  tconv_dims=(60, 120, 240), tconv_filters=(1, 1, 1),
-                 n_filter=5, n_branch=3, learn_rate=1e-4, decay_step=200, decay_rate=0.1,
+                 n_filter=5, n_branch=3, reg_scale=.001, learn_rate=1e-4, decay_step=200, decay_rate=0.1,
                  ckpt_dir=os.path.join(os.path.dirname(__file__), 'models'),
                  make_folder=True):
         """
@@ -36,6 +36,7 @@ class CnnNetwork(object):
         self.tconv_filters = tconv_filters
         self.n_filter = n_filter
         self.n_branch = n_branch
+        self.reg_scale = reg_scale
         self.global_step = tf.Variable(0, dtype=tf.int64, trainable=False, name='global_step')
         self.learn_rate = tf.train.exponential_decay(learn_rate, self.global_step,
                                                      decay_step, decay_rate, staircase=True)
@@ -55,7 +56,7 @@ class CnnNetwork(object):
         :return: outputs of the last layer
         """
         return self.model_fn(self.features, self.batch_size, self.fc_filters, self.tconv_dims, self.tconv_filters,
-                             self.n_filter, self.n_branch)
+                             self.n_filter, self.n_branch, self.reg_scale)
 
     def write_record(self):
         """
@@ -79,7 +80,9 @@ class CnnNetwork(object):
         :return: mean cross entropy loss of the batch
         """
         with tf.variable_scope('loss'):
-            return tf.losses.mean_squared_error(self.labels, self.logits)
+            loss = tf.losses.mean_squared_error(self.labels, self.logits)
+            loss += tf.losses.get_regularization_loss()
+            return loss
             #return tf.reduce_mean(tf.nn.l2_loss(self.labels - self.logits))
 
     def make_optimizer(self):

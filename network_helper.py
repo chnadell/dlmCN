@@ -208,4 +208,7 @@ def get_parameters(model_dir):
         elif line[:8] =='n_branch':
             line = replace_str(line)
             n_branch = [int(s) for s in line.split() if s.isdigit()]
-    return fc_filters, tconv_dims, tconv_filters, n_filter, n_branch[0]
+        elif line[:9] =='reg_scale':
+            line = replace_str(line)
+            reg_scale = float(line[11:])
+    return fc_filters, tconv_dims, tconv_filters, n_filter, n_branch[0], reg_scale
