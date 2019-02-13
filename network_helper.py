@@ -4,6 +4,7 @@ import tfplot
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import matplotlib
 
 
 class Hook(object):
@@ -62,7 +63,7 @@ class ValidationHook(Hook):
     """
     This hook monitors performance on the validation set
     """
-    def __init__(self, valid_step, valid_init_op, truth, pred, loss, ckpt_dir=None, write_summary=False,
+    def __init__(self, valid_step, valid_init_op, truth, pred, loss, preconv, ckpt_dir=None, write_summary=False,
                  curve_num=5):
         """
         Initialize the hook
@@ -81,12 +82,14 @@ class ValidationHook(Hook):
         self.truth = truth
         self.pred = pred
         self.loss = loss
+        self.preconv = preconv
         self.write_summary = write_summary
         self.curve_num = curve_num
         if self.write_summary:
             assert ckpt_dir is not None
             self.valid_mse_summary = HookValueSummary('valid_mse')
             self.valid_curve_summary = HookCurvePlotSummary('pred_plot')
+            self.valid_preconv_summary = HookCurvePlotSummary('preconv_plot')
         self.time_cnt = time.time()
 
     def run(self, sess, writer=None):
@@ -100,10 +103,10 @@ class ValidationHook(Hook):
         if self.step % self.valid_step == 0 and self.step != 0:
             sess.run(self.valid_init_op)
             loss_val = []
-            truth, pred = None, None
+            truth, pred, preconv = None, None, None
             try:
                 while True:
-                    loss, truth, pred = sess.run([self.loss, self.truth, self.pred])
+                    loss, truth, pred, preconv = sess.run([self.loss, self.truth, self.pred, self.preconv])
                     loss_val.append(loss)
             except tf.errors.OutOfRangeError:
                 pass
@@ -113,7 +116,15 @@ class ValidationHook(Hook):
             self.time_cnt = time.time()
             if self.write_summary:
                 self.valid_mse_summary.log(loss_mean, self.step, sess, writer)
-                self.valid_curve_summary.log(truth, pred, self.step, writer, self.curve_num)
+                self.valid_curve_summary.log(pred=pred,
+                                             step=self.step,
+                                             writer=writer,
+                                             curve_num=self.curve_num,
+                                             truth=truth)
+                self.valid_preconv_summary.log(pred=preconv,
+                                               step=self.step,
+                                               writer=writer,
+                                               curve_num=self.curve_num)
 
 
 class HookValueSummary(object):
@@ -155,7 +166,7 @@ class HookCurvePlotSummary(object):
         """
         self.summary_name = summary_name
 
-    def log(self, truth, pred, step, writer, curve_num):
+    def log(self, pred, step, writer, curve_num, truth=None):
         """
         log the value into summary
         :param val: value to log
@@ -164,17 +175,21 @@ class HookCurvePlotSummary(object):
         :param curve_num: #curve plots in validation images
         :return:
         """
-        fig_num = truth.shape[0]
+        fig_num = pred.shape[0]
         fig_idx = np.random.permutation(fig_num)
 
-        fig = plt.figure(figsize=(8, 6))
+        fig = plt.figure(figsize=(14, 6))
         for i in range(curve_num):
             ax = fig.add_subplot(2, 3, i+1)
-            ax.plot(truth[fig_idx[i], :], label='truth')
-            ax.plot(pred[fig_idx[i], :], label='pred')
+            if truth is not None:
+                ax.plot(truth[fig_idx[i], :], label='truth')
+            ax.plot(pred[fig_idx[i], :], label='pred', alpha=0.7, linewidth=1)
             ax.legend()
-            mse = np.mean(np.square(truth[fig_idx[i], :] - pred[fig_idx[i], :]))
-            plt.title('Step {}, MSE={:.3f}'.format(step, mse))
+            if truth is not None:
+                mse = np.mean(np.square(truth[fig_idx[i], :] - pred[fig_idx[i], :]))
+                plt.title('Step {}, MSE={:.3f}'.format(step, mse))
+            else:
+                plt.title('Step {}'.format(step))
             fig.tight_layout()
 
         summary = tfplot.figure.to_summary(fig, tag=self.summary_name)
