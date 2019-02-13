@@ -63,7 +63,7 @@ class ValidationHook(Hook):
     """
     This hook monitors performance on the validation set
     """
-    def __init__(self, valid_step, valid_init_op, truth, pred, loss, preconv, ckpt_dir=None, write_summary=False,
+    def __init__(self, valid_step, valid_init_op, truth, pred, loss, preconv, preTconv, ckpt_dir=None, write_summary=False,
                  curve_num=5):
         """
         Initialize the hook
@@ -83,6 +83,7 @@ class ValidationHook(Hook):
         self.pred = pred
         self.loss = loss
         self.preconv = preconv
+        self.preTconv= preTconv
         self.write_summary = write_summary
         self.curve_num = curve_num
         if self.write_summary:
@@ -90,6 +91,7 @@ class ValidationHook(Hook):
             self.valid_mse_summary = HookValueSummary('valid_mse')
             self.valid_curve_summary = HookCurvePlotSummary('pred_plot')
             self.valid_preconv_summary = HookCurvePlotSummary('preconv_plot')
+            self.valid_preTconv_summary = HookCurvePlotSummary('preTconv_plot')
         self.time_cnt = time.time()
 
     def run(self, sess, writer=None):
@@ -106,7 +108,11 @@ class ValidationHook(Hook):
             truth, pred, preconv = None, None, None
             try:
                 while True:
-                    loss, truth, pred, preconv = sess.run([self.loss, self.truth, self.pred, self.preconv])
+                    loss, truth, pred, preconv, preTconv = sess.run([self.loss,
+                                                                     self.truth,
+                                                                     self.pred,
+                                                                     self.preconv,
+                                                                     self.preTconv])
                     loss_val.append(loss)
             except tf.errors.OutOfRangeError:
                 pass
@@ -122,6 +128,10 @@ class ValidationHook(Hook):
                                              curve_num=self.curve_num,
                                              truth=truth)
                 self.valid_preconv_summary.log(pred=preconv,
+                                               step=self.step,
+                                               writer=writer,
+                                               curve_num=self.curve_num)
+                self.valid_preTconv_summary.log(pred=preTconv,
                                                step=self.step,
                                                writer=writer,
                                                curve_num=self.curve_num)
