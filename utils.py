@@ -5,7 +5,6 @@ from tensorflow.python.framework import tensor_shape
 from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import gen_nn_ops
 
-
 def conv1d_transpose(
     value,
     filter,  # pylint: disable=redefined-builtin
@@ -31,7 +30,7 @@ def conv1d_transpose(
     stride: An `integer`.  The number of entries by which
       the filter is moved right at each step.
     padding: A string, either `'VALID'` or `'SAME'`. The padding algorithm.
-      See the @{tf.nn.convolution$comment here}
+      See the "returns" section of `tf.nn.convolution` for details.
     data_format: A string. 'NHWC' and 'NCHW' are supported.
     name: Optional name for the returned tensor.
   Returns:
@@ -273,10 +272,10 @@ def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tcon
         up = tf.layers.conv1d(up, up_filter, 3, activation=tf.nn.leaky_relu, name='conv_up{}'.format(cnt),
                               padding='same')
         last_filter = up_filter
+    preconv = up
+    up = tf.layers.conv1d(preconv, 1, 1, activation=None, name='conv_final')
 
-    up = tf.layers.conv1d(up, 1, 1, activation=None, name='conv_final')
-
-    return tf.squeeze(up, axis=2)
+    return tf.squeeze(up, axis=2), preconv
 
 def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale):
     """
@@ -304,7 +303,7 @@ def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters
         f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
         up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         last_filter = up_filter
+    preconv = up
+    up = tf.layers.conv1d(preconv, 1, 1, activation=None, name='conv_final')
 
-    up = tf.layers.conv1d(up, 1, 1, activation=None, name='conv_final')
-
-    return tf.squeeze(up, axis=2)
+    return tf.squeeze(up, axis=2), preconv
