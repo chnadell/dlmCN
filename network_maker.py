@@ -46,7 +46,7 @@ class CnnNetwork(object):
             os.makedirs(self.ckpt_dir)
             self.write_record()
 
-        self.logits = self.create_graph()
+        self.logits, self.preconv = self.create_graph()
         self.loss = self.make_loss()
         self.optm = self.make_optimizer()
 
@@ -81,6 +81,7 @@ class CnnNetwork(object):
         """
         with tf.variable_scope('loss'):
             loss = tf.losses.mean_squared_error(self.labels, self.logits)
+            #loss = tf.reduce_mean(tf.math.pow(x=tf.cast(self.labels, dtype=tf.float32)-self.logits, y=4, name ='L4')) # L4 loss
             loss += tf.losses.get_regularization_loss()
             return loss
             #return tf.reduce_mean(tf.nn.l2_loss(self.labels - self.logits))
@@ -160,8 +161,8 @@ class CnnNetwork(object):
                 while True:
                     with open(pred_file, 'a') as f1, open(truth_file, 'a') as f2:
                         pred, truth = sess.run([self.logits, self.labels])
-                        np.savetxt(f1, pred, fmt='%.2f')
-                        np.savetxt(f2, truth, fmt='%.2f')
+                        np.savetxt(f1, pred, fmt='%.3f')
+                        np.savetxt(f2, truth, fmt='%.3f')
             except tf.errors.OutOfRangeError:
                 return pred_file, truth_file
                 pass
