@@ -54,7 +54,7 @@ def main(flags):
     train_hook = network_helper.TrainValueHook(flags.verb_step, ntwk.loss,
                                                ckpt_dir=ntwk.ckpt_dir, write_summary=True)
     valid_hook = network_helper.ValidationHook(flags.eval_step, valid_init_op, ntwk.labels, ntwk.logits, ntwk.loss,
-                                               ckpt_dir=ntwk.ckpt_dir, write_summary=True)
+                                               ntwk.preconv, ckpt_dir=ntwk.ckpt_dir, write_summary=True)
     # train the network
     ntwk.train(train_init_op, flags.train_step, [train_hook, valid_hook], write_summary=True)
 
