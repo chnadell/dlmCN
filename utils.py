@@ -229,22 +229,7 @@ def my_model_fn_linear(features, batch_size, fc_filters, tconv_dims, tconv_filte
     for cnt, filters in enumerate(fc_filters):
         fc = linear(fc, filters, 'fc_linear_{}'.format(cnt), with_w=False)
         fc = tf.nn.leaky_relu(fc)
-
-    up = tf.expand_dims(fc, axis=2)
-    feature_dim = fc_filters[-1]
-
-    last_filter = 1
-    for cnt, (up_size, up_filter) in enumerate(zip(tconv_dims, tconv_filters)):
-        assert up_size%feature_dim == 0
-        stride = up_size // feature_dim
-        feature_dim = up_size
-        f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
-        up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
-        last_filter = up_filter
-
-    up = tf.layers.conv1d(up, 1, 1, activation=None, name='conv_final')
-
-    return tf.squeeze(up, axis=2)
+    return fc
 
 
 def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tconv_filters):
@@ -291,7 +276,8 @@ def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters
         fc = tf.layers.dense(inputs=fc, units=filters, activation=tf.nn.leaky_relu, name='fc{}'.format(cnt),
                              kernel_initializer=tf.random_normal_initializer(stddev=0.02),
                              kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=reg_scale))
-    up = tf.expand_dims(fc, axis=2)
+    preTconv = fc
+    up = tf.expand_dims(preTconv, axis=2)
     feature_dim = fc_filters[-1]
 
     last_filter = 1
@@ -306,4 +292,4 @@ def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters
     preconv = up
     up = tf.layers.conv1d(preconv, 1, 1, activation=None, name='conv_final')
 
-    return tf.squeeze(up, axis=2), preconv
+    return tf.squeeze(up, axis=2), preconv, preTconv

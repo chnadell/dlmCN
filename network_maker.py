@@ -46,7 +46,7 @@ class CnnNetwork(object):
             os.makedirs(self.ckpt_dir)
             self.write_record()
 
-        self.logits, self.preconv = self.create_graph()
+        self.logits, self.preconv, self.preTconv = self.create_graph()
         self.loss = self.make_loss()
         self.optm = self.make_optimizer()
 

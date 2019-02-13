@@ -18,7 +18,7 @@ BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 9990*3
+TRAIN_STEP = 9990*5
 LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
@@ -89,7 +89,7 @@ def main(flags):
     lr_hook = network_helper.TrainValueHook(flags.verb_step, ntwk.learn_rate, ckpt_dir=ntwk.ckpt_dir,
                                             write_summary=True, value_name='learning_rate')
     valid_hook = network_helper.ValidationHook(flags.eval_step, valid_init_op, ntwk.labels, ntwk.logits, ntwk.loss,
-                                               ntwk.preconv,
+                                               ntwk.preconv, ntwk.preTconv,
                                                ckpt_dir=ntwk.ckpt_dir, write_summary=True)
     # train the network
     ntwk.train(train_init_op, flags.train_step, [train_hook, valid_hook, lr_hook], write_summary=True)
