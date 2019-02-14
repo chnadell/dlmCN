@@ -155,14 +155,16 @@ class CnnNetwork(object):
             sess.run(valid_init_op)
             pred_file = os.path.join(save_file, 'test_pred_{}.csv'.format(model_name))
             truth_file = os.path.join(save_file, 'test_truth.csv')
+            feat_file = os.path.join(save_file, 'test_feat.csv')
             with open(pred_file, 'w'), open(truth_file, 'w'):
                 pass
             try:
                 while True:
-                    with open(pred_file, 'a') as f1, open(truth_file, 'a') as f2:
-                        pred, truth = sess.run([self.logits, self.labels])
+                    with open(pred_file, 'a') as f1, open(truth_file, 'a') as f2, open(feat_file, 'a') as f3:
+                        pred, truth, features = sess.run([self.logits, self.labels, self.features])
                         np.savetxt(f1, pred, fmt='%.3f')
                         np.savetxt(f2, truth, fmt='%.3f')
+                        np.savetxt(f3, features, fmt='%.3f')
             except tf.errors.OutOfRangeError:
                 return pred_file, truth_file
                 pass
