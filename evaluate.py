@@ -24,7 +24,7 @@ BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 9990*6
+TRAIN_STEP = 8991*6
 LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
@@ -32,8 +32,8 @@ X_RANGE = [i for i in range(2, 10)]
 Y_RANGE = [i for i in range(10, 2011)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
-FORCE_RUN =False
-MODEL_NAME = '20190211_150050'
+FORCE_RUN =True
+MODEL_NAME = '20190218_155918'
 
 
 def read_flag():
@@ -80,7 +80,7 @@ def compare_truth_pred(pred_file, truth_file):
 
 def main(flags):
     ckpt_dir = os.path.join(os.path.dirname(__file__), 'models', flags.model_name)
-    fc_filters, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale = network_helper.get_parameters(ckpt_dir)
+    fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale = network_helper.get_parameters(ckpt_dir)
 
     # initialize data reader
     if len(tconv_dims) == 0:

@@ -7,7 +7,7 @@ import tensorflow as tf
 
 class CnnNetwork(object):
     def __init__(self, features, labels, model_fn, batch_size, fc_filters=(5, 10, 15),
-                 tconv_dims=(60, 120, 240), tconv_filters=(1, 1, 1),
+                 tconv_Fnums=(4,4), tconv_dims=(60, 120, 240), tconv_filters=(1, 1, 1),
                  n_filter=5, n_branch=3, reg_scale=.001, learn_rate=1e-4, decay_step=200, decay_rate=0.1,
                  ckpt_dir=os.path.join(os.path.dirname(__file__), 'models'),
                  make_folder=True):
@@ -32,6 +32,7 @@ class CnnNetwork(object):
         self.batch_size = batch_size
         self.fc_filters = fc_filters
         assert len(tconv_dims) == len(tconv_filters)
+        self.tconv_Fnums = tconv_Fnums
         self.tconv_dims = tconv_dims
         self.tconv_filters = tconv_filters
         self.n_filter = n_filter
@@ -55,7 +56,8 @@ class CnnNetwork(object):
         Create model graph
         :return: outputs of the last layer
         """
-        return self.model_fn(self.features, self.batch_size, self.fc_filters, self.tconv_dims, self.tconv_filters,
+        return self.model_fn(self.features, self.batch_size, self.fc_filters, self. tconv_Fnums,
+                             self.tconv_dims, self.tconv_filters,
                              self.n_filter, self.n_branch, self.reg_scale)
 
     def write_record(self):

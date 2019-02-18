@@ -7,6 +7,7 @@ import network_helper
 
 INPUT_SIZE = 2
 FC_FILTERS = (100, 500, 2000, 4000, 1000, 150)
+TCONV_FNUMS = (4, 4)
 TCONV_DIMS = (150, 300)
 TCONV_FILTERS = (8, 4)
 N_FILTER = [5]
@@ -18,7 +19,7 @@ BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 9990*5
+TRAIN_STEP = 65500
 LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
@@ -32,6 +33,7 @@ def read_flag():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input-size', type=int, default=INPUT_SIZE, help='input size')
     parser.add_argument('--fc-filters', type=tuple, default=FC_FILTERS, help='#neurons in each fully connected layers')
+    parser.add_argument('--tconv-Fnums', type=tuple, default=TCONV_FNUMS, help='#0th shape dim of each tconv layer')
     parser.add_argument('--tconv-dims', type=tuple, default=TCONV_DIMS,
                         help='dimensionality of data after each transpose convolution')
     parser.add_argument('--tconv-filters', type=tuple, default=TCONV_FILTERS,
@@ -78,7 +80,8 @@ def main(flags):
 
     # make network
     ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn_tens, flags.batch_size,
-                                    fc_filters=flags.fc_filters, tconv_dims=flags.tconv_dims,
+                                    fc_filters=flags.fc_filters, tconv_Fnums=flags.tconv_Fnums,
+                                    tconv_dims=flags.tconv_dims,
                                     tconv_filters=flags.tconv_filters, n_filter=flags.n_filter,
                                     n_branch=flags.n_branch, reg_scale=flags.reg_scale,
                                     learn_rate=flags.learn_rate,

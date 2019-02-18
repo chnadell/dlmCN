@@ -221,6 +221,9 @@ def get_parameters(model_dir):
         if line[:10] == 'fc_filters':
             line = replace_str(line)
             fc_filters = tuple([int(s) for s in line.split() if s.isdigit()])
+        elif line[:11] == 'tconv_Fnums':
+            line =replace_str(line)
+            tconv_Fnums = tuple([int(s) for s in line.split() if s.isdigit()])
         elif line[:10] == 'tconv_dims':
             line = replace_str(line)
             tconv_dims = tuple([int(s) for s in line.split() if s.isdigit()])
@@ -236,4 +239,4 @@ def get_parameters(model_dir):
         elif line[:9] =='reg_scale':
             line = replace_str(line)
             reg_scale = float(line[11:])
-    return fc_filters, tconv_dims, tconv_filters, n_filter, n_branch[0], reg_scale
+    return fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch[0], reg_scale

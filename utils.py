@@ -165,7 +165,7 @@ def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tcon
 
     return tf.squeeze(up, axis=2), preconv
 
-def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale):
+def my_model_fn_tens(features, batch_size, fc_filters, tconv_fNums, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale):
     """
     My customized model function
     :param features: input features
@@ -184,18 +184,18 @@ def my_model_fn_tens(features, batch_size, fc_filters, tconv_dims, tconv_filters
     feature_dim = fc_filters[-1]
 
     last_filter = 1
-    for cnt, (up_size, up_filter) in enumerate(zip(tconv_dims, tconv_filters)):
+    for cnt, (up_fNum, up_size, up_filter) in enumerate(zip(tconv_fNums, tconv_dims, tconv_filters)):
         assert up_size%feature_dim == 0, "up_size={} while feature_dim={} (cnt={})! " \
                                         "Thus mod is {}".format(up_size, feature_dim, cnt, up_size%feature_dim)
         stride = up_size // feature_dim
         feature_dim = up_size
-        f = tf.Variable(tf.random_normal([3, up_filter, last_filter]))
+        f = tf.Variable(tf.random_normal([up_fNum, up_filter, last_filter]))
         up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         last_filter = up_filter
     preconv = up
     up = tf.layers.conv1d(preconv, 1, 1, activation=None, name='conv_final')
-    # up = tf.squeeze(up, axis=2)
+    up = tf.squeeze(up, axis=2)
     # up = tf.layers.dense(inputs=up, units=tconv_dims[-1], activation=tf.nn.leaky_relu, name='fc_final',
-    #                          kernel_initializer=tf.random_normal_initializer(stddev=0.02))
+    #                           kernel_initializer=tf.random_normal_initializer(stddev=0.02))
 
-    return tf.squeeze(up, axis=2), preconv, preTconv
+    return up, preconv, preTconv
