@@ -13,18 +13,19 @@ plt.interactive(False)
 
 INPUT_SIZE = 2
 FC_FILTERS = (100, 500, 2000, 4000, 1000, 150)
+TCONV_FNUMS = (2, 2)
 TCONV_DIMS = (150, 300)
 TCONV_FILTERS = (8, 4)
 N_FILTER = [5]
 N_BRANCH = 2
-REG_SCALE = .001
+REG_SCALE = 5e-8
 CROSS_VAL = 5
 VAL_FOLD = 0
 BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
 EVAL_STEP = 250
-TRAIN_STEP = 8991*6
+TRAIN_STEP = 40000
 LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
@@ -33,7 +34,7 @@ Y_RANGE = [i for i in range(10, 2011)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
 FORCE_RUN =True
-MODEL_NAME = '20190218_155918'
+MODEL_NAME = '20190218_182224'
 
 
 def read_flag():
@@ -98,7 +99,7 @@ def main(flags):
 
     # make network
     ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn_tens, flags.batch_size,
-                                    fc_filters=fc_filters, tconv_dims=tconv_dims,
+                                    fc_filters=fc_filters, tconv_Fnums=tconv_Fnums, tconv_dims=tconv_dims,
                                     n_filter=n_filter, n_branch=n_branch, reg_scale=reg_scale,
                                     tconv_filters=tconv_filters, learn_rate=flags.learn_rate,
                                     decay_step=flags.decay_step, decay_rate=flags.decay_rate, make_folder=False)
