@@ -48,15 +48,18 @@ class CnnNetwork(object):
             self.write_record()
 
         self.logits, self.preconv, self.preTconv = self.create_graph()
-        self.loss = self.make_loss()
-        self.optm = self.make_optimizer()
+        if self.labels==[]:
+            print('labels list is empty')
+        else:
+            self.loss = self.make_loss()
+            self.optm = self.make_optimizer()
 
     def create_graph(self):
         """
         Create model graph
         :return: outputs of the last layer
         """
-        return self.model_fn(self.features, self.batch_size, self.fc_filters, self. tconv_Fnums,
+        return self.model_fn(self.features, self.batch_size, self.fc_filters, self.tconv_Fnums,
                              self.tconv_dims, self.tconv_filters,
                              self.n_filter, self.n_branch, self.reg_scale)
 
@@ -169,4 +172,34 @@ class CnnNetwork(object):
                         np.savetxt(f3, features, fmt='%.3f')
             except tf.errors.OutOfRangeError:
                 return pred_file, truth_file
+
+    def predict(self, pred_init_op, ckpt_dir, save_file=os.path.join(os.path.dirname(__file__), 'dataGrid'),
+                model_name=''):
+        """
+        Evaluate the model, and save predictions to save_file
+        :param valid_init_op: validation dataset init operation
+        :param ckpt_dir directory
+        :param save_file: full path to pred file
+        :param model_name: name of the model
+        :return:
+        """
+        with tf.Session() as sess:
+            self.load(sess, ckpt_dir)
+            sess.run(pred_init_op)
+            pred_file = os.path.join(save_file, 'test_pred_{}.csv'.format(model_name))
+            feat_file = os.path.join(save_file, 'test_feat.csv')
+            with open(pred_file, 'w'):
+                pass
+            try:
+                while True:
+                    with open(pred_file, 'a') as f1, open(feat_file, 'a') as f2:
+                        pred_batch, features_batch = sess.run([self.logits, self.features])
+                        print('features are {}'.format(features_batch))
+                        for pred, features in zip(pred_batch, features_batch):
+                            pred_str = [str(el) for el in pred]
+                            features_str = [ str(el) for el in features]
+                            f1.write(','.join(pred_str)+'\n')
+                            f2.write(','.join(features_str)+'\n')
+            except tf.errors.OutOfRangeError:
+                return pred_file, feat_file
                 pass
