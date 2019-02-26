@@ -191,15 +191,21 @@ class CnnNetwork(object):
             with open(pred_file, 'w'):
                 pass
             try:
+                start = time.time()
+                cnt = 1
                 while True:
-                    with open(pred_file, 'a') as f1, open(feat_file, 'a') as f2:
+                    with open(pred_file, 'a') as f1: #, open(feat_file, 'a') as f2
                         pred_batch, features_batch = sess.run([self.logits, self.features])
-                        print('features are {}'.format(features_batch))
                         for pred, features in zip(pred_batch, features_batch):
                             pred_str = [str(el) for el in pred]
                             features_str = [ str(el) for el in features]
                             f1.write(','.join(pred_str)+'\n')
-                            f2.write(','.join(features_str)+'\n')
+                            # f2.write(','.join(features_str)+'\n')
+                    if (cnt % 100) == 0:
+                        print('cnt is {}, time elapsed is {}, features are {} '.format(cnt,
+                                                                                       np.round(time.time()-start),
+                                                                                       features_batch))
+                    cnt += 1
             except tf.errors.OutOfRangeError:
                 return pred_file, feat_file
                 pass
