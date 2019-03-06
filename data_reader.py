@@ -59,20 +59,12 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
 
     print('downsampling output curves')
     # resample the output curves so that there are not so many output points
-    lblTrain = scipy.signal.resample(lblTrain, output_size+20, axis=1)
-    lblTest = scipy.signal.resample(lblTest, output_size+20, axis=1)
+    lblTrain = scipy.signal.resample(lblTrain, output_size+50, axis=1)
+    lblTest = scipy.signal.resample(lblTest, output_size+50, axis=1)
 
     # remove the ringing that occurs on the end of the spectra due to the Fourier method used by scipy
-    nPoints = len(lblTrain[1, :])
-    lblTrain = np.delete(lblTrain, [0,1,2,3,4,5,6,7,8,9,
-                          nPoints - 10, nPoints - 9, nPoints - 8, nPoints - 7, nPoints - 6, nPoints - 5, nPoints - 4,
-                          nPoints - 3, nPoints - 2, nPoints - 1], axis=1)
-
-    nPoints = len(lblTest[1, :])
-    lblTest = np.delete(lblTest, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-                                    nPoints - 10, nPoints - 9, nPoints - 8, nPoints - 7, nPoints - 6, nPoints - 5,
-                                    nPoints - 4,
-                                    nPoints - 3, nPoints - 2, nPoints - 1], axis=1)
+    lblTrain = np.array([spec[25:-25] for spec in lblTrain])
+    lblTest = np.array([spec[25:-25] for spec in lblTest])
 
     # determine lengths of training and validation sets
     num_data_points = len(ftrTrain)
