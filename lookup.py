@@ -40,7 +40,6 @@ def gen_data(out_path, param_bounds, spacings):
 # yield the geometry from the saved grid data file in the form of a dataset
 def import_data(data_dir, batch_size=100):
     """
-
     :param data_dir:
     :param grid_dir:
     :return: returns a dataset which can yield all the input data

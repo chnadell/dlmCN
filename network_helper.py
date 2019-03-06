@@ -64,7 +64,7 @@ class ValidationHook(Hook):
     This hook monitors performance on the validation set
     """
     def __init__(self, valid_step, valid_init_op, truth, pred, loss, preconv, preTconv, ckpt_dir=None, write_summary=False,
-                 curve_num=5):
+                 curve_num=6):
         """
         Initialize the hook
         :param valid_step: # steps between evaluations
