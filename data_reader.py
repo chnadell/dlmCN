@@ -124,20 +124,22 @@ if __name__ == '__main__':
     lblTest1 = scipy.signal.resample(lblTest, test_output_size , axis=1)
     lblTest1 = np.array([spec[:] for spec in lblTest1])
 
-    # simple decimation
-    lblTest2 = lblTest[::, ::6]
+    # resample_poly
+    lblTest2 = scipy.signal.resample_poly(lblTest, 10, 60, axis=1)
     print(len(lblTest2[0]))
 
-    # resample_poly
-    lblTest3 = scipy.signal.resample_poly(lblTest, 10, 60, axis=1)
+    # simple decimation
+    lblTest3 = lblTest[::, ::6]
     print(len(lblTest3[0]))
 
     indices = np.random.randint(1, len(ftrTest), size=9)
-    fig = plt.figure(figsize=(64, 24))
-    for i, index in zip(range(9), indices):
-        ax = fig.add_subplot(3, 3, i+1)
+    fig = plt.figure(figsize=(32, 12))
+    for i, index in zip(range(3), indices):
+        ax = fig.add_subplot(3, 3, i + 1)
         ax.plot(lblTest1[index])
+        ax = fig.add_subplot(3, 3, i + 1 + 3)
         ax.plot(lblTest2[index])
+        ax = fig.add_subplot(3, 3, i + 1 + 6)
         ax.plot(lblTest3[index])
     plt.show()
 
