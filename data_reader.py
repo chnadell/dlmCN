@@ -4,7 +4,31 @@ import sklearn.utils
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
+
+
+def importData(directory, x_range, y_range):
+    # pull data into python, should be either for training set or eval set
+    train_data_files = []
+    for file in os.listdir(os.path.join(directory)):
+        if file.endswith('.csv'):
+            train_data_files.append(file)
+    print(train_data_files)
+    # get data
+    ftr = []
+    lbl = []
+    for file_name in train_data_files:
+        # import full arrays
+        ftr_array = pd.read_csv(os.path.join(directory, file_name), delimiter=',', usecols=x_range)
+        lbl_array = pd.read_csv(os.path.join(directory, file_name), delimiter=',', usecols=y_range)
+        # append each data point to ftr and lbl
+        for params, curve in zip(ftr_array.values, lbl_array.values):
+            ftr.append(params)
+            lbl.append(curve)
+    ftr = np.array(ftr, dtype='float32')
+    lbl = np.array(lbl, dtype='float32')
+    return ftr, lbl
 
 def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0, batch_size=100,
                  shuffle_size=100, data_dir=os.path.dirname(__file__), rand_seed=1234):
@@ -28,31 +52,9 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     """
 
     # get data files
-    def importData(directory):
-            # pull data into python, should be either for training set or eval set
-        train_data_files = []
-        for file in os.listdir(os.path.join(directory)):
-            if file.endswith('.csv'):
-                train_data_files.append(file)
-        print(train_data_files)
-        # get data
-        ftr = []
-        lbl = []
-        for file_name in train_data_files:
-            # import full arrays
-            ftr_array = pd.read_csv(os.path.join(directory, file_name), delimiter=',', usecols=x_range)
-            lbl_array = pd.read_csv(os.path.join(directory, file_name), delimiter=',', usecols=y_range)
-            # append each data point to ftr and lbl
-            for params, curve in zip(ftr_array.values, lbl_array.values):
-                ftr.append(params)
-                lbl.append(curve)
-        ftr = np.array(ftr, dtype='float32')
-        lbl = np.array(lbl, dtype='float32')
-        return ftr, lbl
-    print('getting data files')
-
-    ftrTrain, lblTrain = importData(os.path.join(data_dir, 'dataIn'))
-    ftrTest, lblTest = importData(os.path.join(data_dir, 'dataIn', 'eval'))
+    print('getting data files...')
+    ftrTrain, lblTrain = importData(os.path.join(data_dir, 'dataIn'), x_range, y_range)
+    ftrTest, lblTest = importData(os.path.join(data_dir, 'dataIn', 'eval'), x_range, y_range)
 
     print('total number of training samples is {}'.format(len(ftrTrain)))
     print('total number of test samples is {}'.format(len(ftrTest)))
@@ -91,14 +93,51 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     return features, labels, train_init_op, valid_init_op
 
 if __name__ == '__main__':
-    print('testing read_data')
-    read_data(input_size=2,
-              output_size=300,
-              x_range=[i for i in range(2, 10)],
-              y_range=[i for i in range(10, 2011)],
-              cross_val=5,
-              val_fold=0,
-              batch_size=100,
-              shuffle_size=100,
-              data_dir=os.path.dirname(__file__), rand_seed=1234)
-    print('done.')
+    # print('testing read_data')
+    # read_data(input_size=2,
+    #           output_size=300,
+    #           x_range=[i for i in range(2, 10)],
+    #           y_range=[i for i in range(10, 2011)],
+    #           cross_val=5,
+    #           val_fold=0,
+    #           batch_size=100,
+    #           shuffle_size=100,
+    #           data_dir=os.path.dirname(__file__), rand_seed=1234)
+    # print('done.')
+
+    # Test some downsampling methods
+
+    test_output_size = 334
+    x_range = [i for i in range(2, 10)]
+    y_range = [i for i in range(10, 2011)]
+    print('testing downsampling...')
+    print('getting test data...')
+    ftrTest, lblTest = importData(os.path.join(os.path.dirname(__file__), 'dataIn', 'eval'),
+                                  x_range,
+                                  y_range)
+
+    print('total number of test samples is {}'.format(len(ftrTest)),
+          'length of an input spectrum is {}'.format(len(lblTest[0])))
+
+    print('downsampling output curves')
+    # resample via scipy method
+    lblTest1 = scipy.signal.resample(lblTest, test_output_size , axis=1)
+    lblTest1 = np.array([spec[:] for spec in lblTest1])
+
+    # simple decimation
+    lblTest2 = lblTest[::, ::6]
+    print(len(lblTest2[0]))
+
+    # resample_poly
+    lblTest3 = scipy.signal.resample_poly(lblTest, 10, 60, axis=1)
+    print(len(lblTest3[0]))
+
+    indices = np.random.randint(1, len(ftrTest), size=9)
+    fig = plt.figure(figsize=(64, 24))
+    for i, index in zip(range(9), indices):
+        ax = fig.add_subplot(3, 3, i+1)
+        ax.plot(lblTest1[index])
+        ax.plot(lblTest2[index])
+        ax.plot(lblTest3[index])
+    plt.show()
+
