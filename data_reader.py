@@ -61,12 +61,31 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
 
     print('downsampling output curves')
     # resample the output curves so that there are not so many output points
-    lblTrain = scipy.signal.resample(lblTrain, output_size+50, axis=1)
-    lblTest = scipy.signal.resample(lblTest, output_size+50, axis=1)
+    # lblTrain = lblTrain[::, ::6]
+    # lblTest = lblTest[::, ::6]
 
-    # remove the ringing that occurs on the end of the spectra due to the Fourier method used by scipy
-    lblTrain = np.array([spec[25:-25] for spec in lblTrain])
-    lblTest = np.array([spec[25:-25] for spec in lblTest])
+    print('getting test data...')
+    ftrTest, lblTest = importData(os.path.join(os.path.dirname(__file__), 'dataIn', 'eval'),
+                                  x_range,
+                                  y_range)
+
+    print('total number of test samples is {}'.format(len(ftrTest)),
+          'length of an input spectrum is {}'.format(len(lblTest[0])))
+
+    print('downsampling output curves')
+    # resample via scipy method
+    lblTest = scipy.signal.resample(lblTest, output_size + 20, axis=1)
+    lblTrain = scipy.signal.resample(lblTrain, output_size + 20, axis=1)
+    lblTest = np.array([spec[10:-10] for spec in lblTest])
+    lblTrain = np.array([spec[10:-10] for spec in lblTrain])
+
+
+    print('length of downsampled train spectra is {} for first, {} for final, '.format(len(lblTrain[0]),
+                                                                                 len(lblTrain[-1])),
+          'set final layer size to be compatible with this number')
+    print('length of downsampled test spectra is {}, '.format(len(lblTest[0]),
+                                                         len(lblTest[-1])),
+          'set final layer size to be compatible with this number')
 
     # determine lengths of training and validation sets
     num_data_points = len(ftrTrain)
