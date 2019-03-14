@@ -225,20 +225,22 @@ class CnnNetwork(object):
             self.load(sess, ckpt_dir)
             sess.run(pred_init_op)
             pred_file = os.path.join(save_file, 'test_pred_{}'.format(model_name))
-            feat_file = os.path.join(save_file, 'test_feat')
+            feat_file = os.path.join(save_file, 'test_feat_{}'.format(model_name) + '.csv')
             with open(pred_file, 'wb'):
                 pass
             try:
                 start = time.time()
                 cnt = 1
                 while True:
-                    with open(pred_file, 'ab') as f1: #, open(feat_file, 'a') as f2
+                    with open(pred_file, 'ab') as f1, open(feat_file, 'a') as f2:
                         pred_batch, features_batch = sess.run([self.logits, self.features])
                         for pred, features in zip(pred_batch, features_batch):
                             preduint64 = [int(np.round(x*255)) for x in np.clip(pred, a_min=0, a_max=1)]  # network
                             # occasionally predicts a slightly negative value, so clip these out
                             pred_bin = struct.pack("B"*len(preduint64), *preduint64)
                             f1.write(pred_bin)
+                            features_str = ','.join([str(ftr) for ftr in features])
+                            f2.write(features_str + '\n')
                     if (cnt % 100) == 0:
                         print('cnt is {}, time elapsed is {}, features are {} '.format(cnt,
                                                                                        np.round(time.time()-start),
