@@ -33,7 +33,12 @@ def gen_data(out_path, param_bounds, spacings):
                             for r2 in np.arange(param_bounds[5, 0], param_bounds[5, 1], spacings[5]):
                                 for r3 in np.arange(param_bounds[6, 0], param_bounds[6, 1], spacings[6]):
                                     for r4 in np.arange(param_bounds[7, 0], param_bounds[7, 1], spacings[7]):
-                                        geom_params = np.round([h1, h2, h3, h4, r1, r2, r3, r4], 1)
+                                        geom_params = np.round([h1, h2, h3, h4,
+                                                                r1, r2, r3, r4,
+                                                                r1/h1, r2/h1, r3/h1, r4/h1,
+                                                                r1/h2, r2/h2, r3/h2, r4/h2,
+                                                                r1/h3, r2/h3, r3/h3, r4/h3,
+                                                                r1/h4, r2/h4, r3/h4, r4/h4], 1)
                                         geom_strs = [str(el) for el in geom_params]
                                         gfile.write(",".join(geom_strs) + '\n')
     finish = time.time()
@@ -58,7 +63,7 @@ def import_data(data_dir, batch_size=100):
             print('getting geom from file {}'.format(file_name))
             with open(file_name, 'r') as file:
                 for line in file:
-                    geom = line.split(",")[2:26]   #[2:26] if using validation set for testing
+                    geom = line.split(",")  # [2:26] if using validation set for testing
                     # print(geom, np.shape(geom))
                     assert len(geom) == 8 + 16, "expected geometry vector of length 8+16, got length {}".format(len(geom))
                     yield geom
@@ -242,26 +247,27 @@ def lookupBin(sstar, library_path, geometries_path, candidate_num):
     return candidates, geoms
 
 if __name__=="__main__":
-    # gen_data(
-    #     os.path.join('.', 'dataGrid', 'gridFiles'), param_bounds=np.array([
-    #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2],
-    #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
-    #     spacings=[.8,.8,.8,.8,.8,.8,.8,.8])
+    gen_data(
+        os.path.join('.', 'dataGrid', 'gridFiles'), param_bounds=np.array([
+                                                             [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2],
+                                                             [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
+        spacings=[.8,.8,.8,.8,.8,.8,.8,.8])
     modelNum = '20190311_183831'
     # import_data(os.path.join('.', 'dataIn', 'eval'), os.path.join('.', 'dataGrid'), batch_size=100, shuffle_size=100)
 
-    # main(data_dir=os.path.join('.', 'dataIn', 'eval'), grid_dir=os.path.join('.', 'dataGrid'),
-    #      model_name=modelNum, batch_size=1000)
+    main(data_dir=os.path.join('.', 'dataGrid', 'gridFiles'),
+         grid_dir=os.path.join('D:\dlmData', 'library' + str(modelNum)),
+         model_name=modelNum, batch_size=1000)
 
     # define test sstar, see ML\lookupTest\findTestSpectra.nb
-    spec = [None for i in range(300)]
-    spec[50] = int(.7*255)
-    spec[140] = int(.2*255)
-    spec[250] = int(.1*255)
-    cand = lookupBin(sstar=spec,
-                     library_path=os.path.join('.', 'dataGrid', 'test_pred_' + modelNum),
-                     geometries_path=os.path.join('.', 'dataGrid', 'test_feat_{}'.format(modelNum) + '.csv'),
-                     candidate_num=3)
+    # spec = [None for i in range(300)]
+    # spec[50] = int(.7*255)
+    # spec[140] = int(.2*255)
+    # spec[250] = int(.1*255)
+    # cand = lookupBin(sstar=spec,
+    #                  library_path=os.path.join('.', 'dataGrid', 'test_pred_' + modelNum),
+    #                  geometries_path=os.path.join('.', 'dataGrid', 'test_feat_{}'.format(modelNum) + '.csv'),
+    #                  candidate_num=3)
 
     # # test of usigned integer spectra
     # practice_file = os.path.join('.', 'dataIn', 'orig', 'bp5_OutMod.csv')

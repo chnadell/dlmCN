@@ -104,9 +104,8 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     lblTrain = lblTrain[::, len(lblTest[0])-1800::6]
     lblTest = lblTest[::, len(lblTest[0])-1800::6]
 
-
     print('length of downsampled train spectra is {} for first, {} for final, '.format(len(lblTrain[0]),
-                                                                                 len(lblTrain[-1])),
+                                                                                       len(lblTrain[-1])),
           'set final layer size to be compatible with this number')
     print('length of downsampled test spectra is {}, '.format(len(lblTest[0]),
                                                          len(lblTest[-1])),
