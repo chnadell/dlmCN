@@ -165,7 +165,9 @@ def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tcon
 
     return tf.squeeze(up, axis=2), preconv
 
-def my_model_fn_tens(features, batch_size, fc_filters, tconv_fNums, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale):
+def my_model_fn_tens(features, batch_size, clip,
+                     fc_filters, tconv_fNums, tconv_dims, tconv_filters,
+                     n_filter, n_branch, reg_scale):
     """
     My customized model function
     :param features: input features
@@ -194,8 +196,8 @@ def my_model_fn_tens(features, batch_size, fc_filters, tconv_fNums, tconv_dims, 
         last_filter = up_filter
     preconv = up
     up = tf.layers.conv1d(preconv, 1, 1, activation=None, name='conv_final')
+    up = up[:, clip:-clip]
     up = tf.squeeze(up, axis=2)
     # up = tf.layers.dense(inputs=up, units=tconv_dims[-1], activation=tf.nn.leaky_relu, name='fc_final',
     #                           kernel_initializer=tf.random_normal_initializer(stddev=0.02))
-
     return up, preconv, preTconv
