@@ -3,10 +3,11 @@ import time
 import inspect
 import numpy as np
 import tensorflow as tf
+import struct
 
 
 class CnnNetwork(object):
-    def __init__(self, features, labels, model_fn, batch_size, fc_filters=(5, 10, 15),
+    def __init__(self, features, labels, model_fn, batch_size, clip=0, fc_filters=(5, 10, 15),
                  tconv_Fnums=(4,4), tconv_dims=(60, 120, 240), tconv_filters=(1, 1, 1),
                  n_filter=5, n_branch=3, reg_scale=.001, learn_rate=1e-4, decay_step=200, decay_rate=0.1,
                  ckpt_dir=os.path.join(os.path.dirname(__file__), 'models'),
@@ -30,8 +31,10 @@ class CnnNetwork(object):
         self.labels = labels
         self.model_fn = model_fn
         self.batch_size = batch_size
+        self.clip = clip
         self.fc_filters = fc_filters
         assert len(tconv_dims) == len(tconv_filters)
+        assert len(tconv_Fnums) == len(tconv_filters)
         self.tconv_Fnums = tconv_Fnums
         self.tconv_dims = tconv_dims
         self.tconv_filters = tconv_filters
@@ -59,7 +62,7 @@ class CnnNetwork(object):
         Create model graph
         :return: outputs of the last layer
         """
-        return self.model_fn(self.features, self.batch_size, self.fc_filters, self.tconv_Fnums,
+        return self.model_fn(self.features, self.batch_size, self.clip, self.fc_filters, self.tconv_Fnums,
                              self.tconv_dims, self.tconv_filters,
                              self.n_filter, self.n_branch, self.reg_scale)
 
@@ -177,7 +180,6 @@ class CnnNetwork(object):
                 model_name=''):
         """
         Evaluate the model, and save predictions to save_file
-        :param valid_init_op: validation dataset init operation
         :param ckpt_dir directory
         :param save_file: full path to pred file
         :param model_name: name of the model
@@ -201,6 +203,42 @@ class CnnNetwork(object):
                             features_str = [ str(el) for el in features]
                             f1.write(','.join(pred_str)+'\n')
                             # f2.write(','.join(features_str)+'\n')
+                    if (cnt % 100) == 0:
+                        print('cnt is {}, time elapsed is {}, features are {} '.format(cnt,
+                                                                                       np.round(time.time()-start),
+                                                                                       features_batch))
+                    cnt += 1
+            except tf.errors.OutOfRangeError:
+                return pred_file, feat_file
+                pass
+
+    def predictBin(self, pred_init_op, ckpt_dir, save_file=os.path.join(os.path.dirname(__file__), 'dataGrid'),
+                model_name=''):
+        """
+        Evaluate the model, and save predictions to binary save_file
+        :param ckpt_dir directory
+        :param save_file: full path to pred file
+        :param model_name: name of the model
+        :return:
+        """
+        with tf.Session() as sess:
+            self.load(sess, ckpt_dir)
+            sess.run(pred_init_op)
+            pred_file = os.path.join(save_file, 'test_pred_{}'.format(model_name))
+            feat_file = os.path.join(save_file, 'test_feat')
+            with open(pred_file, 'wb'):
+                pass
+            try:
+                start = time.time()
+                cnt = 1
+                while True:
+                    with open(pred_file, 'ab') as f1: #, open(feat_file, 'a') as f2
+                        pred_batch, features_batch = sess.run([self.logits, self.features])
+                        for pred, features in zip(pred_batch, features_batch):
+                            preduint64 = [int(np.round(x*255)) for x in np.clip(pred, a_min=0, a_max=1)]  # network
+                            # occasionally predicts a slightly negative value, so clip these out
+                            pred_bin = struct.pack("B"*len(preduint64), *preduint64)
+                            f1.write(pred_bin)
                     if (cnt % 100) == 0:
                         print('cnt is {}, time elapsed is {}, features are {} '.format(cnt,
                                                                                        np.round(time.time()-start),
