@@ -12,11 +12,12 @@ import network_helper
 plt.interactive(False)
 
 INPUT_SIZE = 2
-FC_FILTERS = (100, 500, 2000, 1000, 150)
-TCONV_FNUMS = (4, 4)
-TCONV_DIMS = (150, 300)
+CLIP = 15
+FC_FILTERS = (100, 250, 500, 1000, 1500, 2000, 1000, 500, 165)
+TCONV_FNUMS = (6, 6)
+TCONV_DIMS = (165, 330)
 TCONV_FILTERS = (8, 4)
-N_FILTER = [5]
+N_FILTER = [15]
 N_BRANCH = 2
 REG_SCALE = 5e-8
 CROSS_VAL = 5
@@ -24,17 +25,17 @@ VAL_FOLD = 0
 BATCH_SIZE = 10
 SHUFFLE_SIZE = 2000
 VERB_STEP = 25
-EVAL_STEP = 250
+EVAL_STEP = 500
 TRAIN_STEP = 45000
 LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
-X_RANGE = [i for i in range(2, 10)]
-Y_RANGE = [i for i in range(10, 2011)]
+X_RANGE = [i for i in range(2, 10 + 16)]
+Y_RANGE = [i for i in range(10 + 16, 2011 + 16)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
 FORCE_RUN =True
-MODEL_NAME = '20190308_160753'
+MODEL_NAME = '20190311_213413'
 
 
 def read_flag():
@@ -81,7 +82,7 @@ def compare_truth_pred(pred_file, truth_file):
 
 def main(flags):
     ckpt_dir = os.path.join(os.path.dirname(__file__), 'models', flags.model_name)
-    fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale = network_helper.get_parameters(ckpt_dir)
+    clip, fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale = network_helper.get_parameters(ckpt_dir)
 
     # initialize data reader
     if len(tconv_dims) == 0:
@@ -89,7 +90,7 @@ def main(flags):
     else:
         output_size = tconv_dims[-1]
     features, labels, train_init_op, valid_init_op = data_reader.read_data(input_size=flags.input_size,
-                                                                           output_size=output_size,
+                                                                           output_size=output_size-2*clip,
                                                                            x_range=flags.x_range,
                                                                            y_range=flags.y_range,
                                                                            cross_val=flags.cross_val,
@@ -99,7 +100,7 @@ def main(flags):
 
     # make network
     ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn_tens, flags.batch_size,
-                                    fc_filters=fc_filters, tconv_Fnums=tconv_Fnums, tconv_dims=tconv_dims,
+                                    clip, fc_filters=fc_filters, tconv_Fnums=tconv_Fnums, tconv_dims=tconv_dims,
                                     n_filter=n_filter, n_branch=n_branch, reg_scale=reg_scale,
                                     tconv_filters=tconv_filters, learn_rate=flags.learn_rate,
                                     decay_step=flags.decay_step, decay_rate=flags.decay_rate, make_folder=False)
