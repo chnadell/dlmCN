@@ -151,7 +151,7 @@ def lookup(sstar, library_path, candidate_num):
     plt.show()
     return candidates
 
-def lookupBin(sstar, library_path, candidate_num):
+def lookupBin(sstar, library_path, geometries_path, candidate_num):
     candidates = []
     start = time.time()
 
@@ -169,12 +169,14 @@ def lookupBin(sstar, library_path, candidate_num):
                 yield dat
             else:
                 break
-
+    batch_cnt = 0
+    spec_cnt = 0
     simult_spectra = 2  # the number of spectra to read from the file at a time
     with open(library_path, 'rb') as lib:
         structobj = struct.Struct('B'*(300*simult_spectra))
-        for bytes in byte_yield(lib, byte_num=300*simult_spectra):  # needs exact length of a spectrum
-            spectrum_batch = structobj.unpack(bytes)  # unpack a single unsigned char to [0, 255]
+        for byte_set in byte_yield(lib, byte_num=300*simult_spectra):  # needs exact length of a spectrum
+            spectrum_batch = structobj.unpack(byte_set)  # unpack a single unsigned char to [0, 255]
+            batch_cnt += 1
 
             # yield a single spectrum from the batch
             def spec_chunk(l, n):
@@ -183,42 +185,61 @@ def lookupBin(sstar, library_path, candidate_num):
 
             # consider each spectrum in the batch one at a time
             for spectrum in spec_chunk(spectrum_batch, 300):
+                spec_cnt += 1
                 # convert back to floats on [0, 1]
                 assert len(spectrum) == 300
 
                 # calculate mse with desired spectrum
                 errors = []
-
                 for index, value in sstar_keyPoints:
                     errors.append((spectrum[index]-value)**2)
                 mse = np.mean(errors)
 
                 if len(candidates) < candidate_num:  # then we need more candidates, so append
-                    candidates.append([spectrum, mse])
+                    candidates.append([spectrum, mse, spec_cnt])
                 else:  # see if this spectrum is better than any of the current candidates
                     for candidate in candidates:
                         if candidate[1] > mse:
-                            candidates.append([spectrum, mse])
+                            candidates.append([spectrum, mse, spec_cnt])
                             candidates.sort(key=lambda x: x[1])
                             candidates = candidates[:candidate_num]  # take only the candidates with the lowest error
                             break
-    # extract the defined points of sstar
-    sstar_keyPoints = []
-    for cnt, value in enumerate(sstar):
-        if value is not None:
-            sstar_keyPoints.append([cnt, value])
 
     print('total search time taken is {}'.format(np.round(time.time() - start, 4)))
     #convert to arrays so we can slice
     sstar_keyPoints = np.array(sstar_keyPoints)
     candidates = np.array(candidates)
+
+    # get the geometric values from the file of features
+    spec_indices = candidates[:, 2]
+    print('spec_indices are {}'.format(spec_indices))
+    geom_strings = []
+    geom_cnt = 0
+    with open(geometries_path, 'r') as geom_file:
+        for line in geom_file:
+            geom_cnt += 1
+            if geom_cnt in spec_indices:
+                geom_strings.append(line)
+                if len(geom_strings) == len(candidates):
+                    break
+    geom_strings_split = [geometries.split(',') for geometries in geom_strings]
+    geoms = []
+    for geom_set in geom_strings_split:
+        geoms.append([float(string) for string in geom_set])
+
+    # rearrange geom elements so that they match the order of candidates (sorted by MSE)
+    indices=sorted(range(len(candidates)), key=lambda k: candidates[k, 2])
+    geoms = [geoms[i] for i in indices]
+    print('geom_cnt is {}'.format(geom_cnt))
+    print('geometries are {}'.format(np.array(geoms)))
+
     # plot the defined sstar points along with the candidate
     plt.scatter(sstar_keyPoints[:, 0],
                 sstar_keyPoints[:, 1])
     for candidate in candidates[:, 0]:
         plt.plot(candidate)
     plt.show()
-    return candidates
+    return candidates, geoms
 
 if __name__=="__main__":
     # gen_data(
@@ -239,8 +260,8 @@ if __name__=="__main__":
     spec[250] = int(.1*255)
     cand = lookupBin(sstar=spec,
                      library_path=os.path.join('.', 'dataGrid', 'test_pred_' + modelNum),
+                     geometries_path=os.path.join('.', 'dataGrid', 'test_feat_{}'.format(modelNum) + '.csv'),
                      candidate_num=3)
-
 
     # # test of usigned integer spectra
     # practice_file = os.path.join('.', 'dataIn', 'orig', 'bp5_OutMod.csv')
