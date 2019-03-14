@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 import time
 
 import utils
@@ -10,6 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from itertools import islice
+import struct
 
 # generate geometric parameters for the grid and save them in a file
 def gen_data(out_path, param_bounds, spacings):
@@ -53,15 +55,16 @@ def import_data(data_dir, batch_size=100):
 
     def get_geom(data_paths):
         for file_name in data_paths:
+            print('getting geom from file {}'.format(file_name))
             with open(file_name, 'r') as file:
                 for line in file:
-                    geom = line.split(",")[2:10]   #[2:10] if using validation set for testing
+                    geom = line.split(",")[2:26]   #[2:26] if using validation set for testing
                     # print(geom, np.shape(geom))
-                    assert len(geom) == 8, "expected geometry vector of length 8, got length {}".format(len(geom))
+                    assert len(geom) == 8 + 16, "expected geometry vector of length 8+16, got length {}".format(len(geom))
                     yield geom
 
     ds = tf.data.Dataset.from_generator(lambda: get_geom(data_paths), (tf.float32),
-                                        (tf.TensorShape([8]))
+                                        (tf.TensorShape([24]))
                                         )
     # shuffle then split into training and validation sets
     ds = ds.batch(batch_size, drop_remainder=True)
@@ -74,9 +77,9 @@ def import_data(data_dir, batch_size=100):
 
 
 # generate predictions with the given model and save them to a spectrum library file
-def main(data_dir, grid_dir, model_name, batch_size=100):
+def main(data_dir, grid_dir, model_name, batch_size=10):
     ckpt_dir = os.path.join(os.path.dirname(__file__), 'models', model_name)
-    fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch, \
+    clip, fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch, \
     reg_scale = network_helper.get_parameters(ckpt_dir)
 
     print('defining input data')
@@ -85,7 +88,7 @@ def main(data_dir, grid_dir, model_name, batch_size=100):
 
     print('making network')
     # make network
-    ntwk = network_maker.CnnNetwork(features, [], utils.my_model_fn_tens, batch_size,
+    ntwk = network_maker.CnnNetwork(features, [], utils.my_model_fn_tens, batch_size, clip=clip,
                                     fc_filters=fc_filters, tconv_Fnums=tconv_Fnums, tconv_dims=tconv_dims,
                                     n_filter=n_filter, n_branch=n_branch, reg_scale=reg_scale,
                                     tconv_filters=tconv_filters, make_folder=False)
@@ -95,18 +98,25 @@ def main(data_dir, grid_dir, model_name, batch_size=100):
 
     # evaluate the model for each geometry in the grid file
     print('executing the model ...')
-    pred_file, feat_file = ntwk.predict(pred_init_op, ckpt_dir=ckpt_dir, model_name=model_name, save_file=save_file)
+    pred_file, feat_file = ntwk.predictBin(pred_init_op, ckpt_dir=ckpt_dir, model_name=model_name, save_file=save_file)
     return pred_file, feat_file
 
 def lookup(sstar, library_path, candidate_num):
     candidates = []
     start = time.time()
+    # extract the defined points of sstar
+    sstar_keyPoints = []
+    for cnt, value in enumerate(sstar):
+        if value is not None:
+            sstar_keyPoints.append([cnt, value])
+
     with open(library_path) as lib:
         line_batch = islice(lib, 100)
         for line in line_batch:
             # line_start = time.time()
             # if cnt != 0 and (cnt % 1000) == 0:
             #     print('line is {}, time taken is {}'.format(cnt, np.round(time.time()-start, 3)))
+
             # get spectrum from library file
             spectrum = line.split(',')
             spectrum = [float(string) for string in spectrum]
@@ -114,9 +124,9 @@ def lookup(sstar, library_path, candidate_num):
 
             # calculate mse with desired spectrum
             errors = []
-            for sstar_point, spectrum_point in zip(sstar, spectrum):
-                if sstar_point is not None:  # use only the defined points of sstar
-                    errors.append((spectrum_point-sstar_point)**2)
+
+            for index, value in sstar_keyPoints:
+                errors.append((spectrum[index] - value) ** 2)
             mse = np.mean(errors)
 
             if len(candidates) < candidate_num:  # then we need more candidates, so append
@@ -128,6 +138,70 @@ def lookup(sstar, library_path, candidate_num):
                         candidates.sort(key=lambda x: x[1])
                         candidates = candidates[:candidate_num]  # take only the candidates with the lowest error
                         break
+
+    print('total search time taken is {}'.format(np.round(time.time() - start, 4)))
+    #convert to arrays so we can slice
+    sstar_keyPoints = np.array(sstar_keyPoints)
+    candidates = np.array(candidates)
+    # plot the defined sstar points along with the candidate
+    plt.scatter(sstar_keyPoints[:, 0],
+                sstar_keyPoints[:, 1])
+    for candidate in candidates[:, 0]:
+        plt.plot(candidate)
+    plt.show()
+    return candidates
+
+def lookupBin(sstar, library_path, candidate_num):
+    candidates = []
+    start = time.time()
+
+    sstar_keyPoints = []
+    for starcnt, value in enumerate(sstar):  # extract the defined points of sstar
+        if value is not None:
+            sstar_keyPoints.append((starcnt, value))
+
+    # make generator for bytes from a file to be read
+    def byte_yield(f, byte_num):
+        dat = 'x'
+        while dat:
+            dat = f.read(byte_num)
+            if dat:
+                yield dat
+            else:
+                break
+
+    simult_spectra = 2  # the number of spectra to read from the file at a time
+    with open(library_path, 'rb') as lib:
+        structobj = struct.Struct('B'*(300*simult_spectra))
+        for bytes in byte_yield(lib, byte_num=300*simult_spectra):  # needs exact length of a spectrum
+            spectrum_batch = structobj.unpack(bytes)  # unpack a single unsigned char to [0, 255]
+
+            # yield a single spectrum from the batch
+            def spec_chunk(l, n):
+                for i in range(0, len(l), n):
+                    yield l[i: i + n]
+
+            # consider each spectrum in the batch one at a time
+            for spectrum in spec_chunk(spectrum_batch, 300):
+                # convert back to floats on [0, 1]
+                assert len(spectrum) == 300
+
+                # calculate mse with desired spectrum
+                errors = []
+
+                for index, value in sstar_keyPoints:
+                    errors.append((spectrum[index]-value)**2)
+                mse = np.mean(errors)
+
+                if len(candidates) < candidate_num:  # then we need more candidates, so append
+                    candidates.append([spectrum, mse])
+                else:  # see if this spectrum is better than any of the current candidates
+                    for candidate in candidates:
+                        if candidate[1] > mse:
+                            candidates.append([spectrum, mse])
+                            candidates.sort(key=lambda x: x[1])
+                            candidates = candidates[:candidate_num]  # take only the candidates with the lowest error
+                            break
     # extract the defined points of sstar
     sstar_keyPoints = []
     for cnt, value in enumerate(sstar):
@@ -152,17 +226,39 @@ if __name__=="__main__":
     #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2],
     #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
     #     spacings=[.8,.8,.8,.8,.8,.8,.8,.8])
-    modelNum = '20190218_182224'
-    #import_data(os.path.join('.', 'dataIn', 'eval'), os.path.join('.', 'dataGrid'), batch_size=100, shuffle_size=100)
+    modelNum = '20190311_183831'
+    # import_data(os.path.join('.', 'dataIn', 'eval'), os.path.join('.', 'dataGrid'), batch_size=100, shuffle_size=100)
+
     # main(data_dir=os.path.join('.', 'dataIn', 'eval'), grid_dir=os.path.join('.', 'dataGrid'),
     #      model_name=modelNum, batch_size=1000)
 
     # define test sstar, see ML\lookupTest\findTestSpectra.nb
     spec = [None for i in range(300)]
-    spec[50] = .7
-    spec[100] = .2
-    spec[250] = .1
-    cand = lookup(sstar=spec,
-                  library_path=os.path.join('.', 'dataGrid', 'test_pred_' + modelNum + '.csv'),
-                  candidate_num=3)
+    spec[50] = int(.7*255)
+    spec[140] = int(.2*255)
+    spec[250] = int(.1*255)
+    cand = lookupBin(sstar=spec,
+                     library_path=os.path.join('.', 'dataGrid', 'test_pred_' + modelNum),
+                     candidate_num=3)
 
+
+    # # test of usigned integer spectra
+    # practice_file = os.path.join('.', 'dataIn', 'orig', 'bp5_OutMod.csv')
+    # with open(practice_file, 'r') as f:
+    #     prac_data = pd.read_csv(f, header=None)
+    # specs = prac_data.iloc[::, 10:]
+    # specs2 = specs
+    # print(len(specs2.iloc[:, 0]))
+    # print(len(specs2.iloc[0]))
+    # specs2 = specs2*255
+    # specs2 = specs2.astype(np.uint64)
+    # fig = plt.figure(figsize=(16, 6))
+    # ax = fig.add_subplot(2, 2, 1)
+    # ax.plot(specs2.iloc[0, :])
+    # ax.plot(specs.iloc[0, :]*255)
+    #
+    # ax = fig.add_subplot(2, 2, 2)
+    # ax.plot(specs2.iloc[1, :])
+    # ax.plot(specs.iloc[1, :]*255)
+
+    print('done.')
