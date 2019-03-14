@@ -241,11 +241,9 @@ class CnnNetwork(object):
                             f1.write(pred_bin)
                             features_str = ','.join([str(ftr) for ftr in features])
                             f2.write(features_str + '\n')
-                    if (cnt % 100) == 0:
-                        print('cnt is {}, time elapsed is {}, features are {} '.format(cnt,
-                                                                                       np.round(time.time()-start),
-                                                                                       features_batch))
-                    cnt += 1
+                            cnt += 1
+                            if (cnt % 1000000) == 0:
+                                print('cnt is {}, minutes elapsed is {}'.format(cnt, np.round(time.time()-start)/60))
             except tf.errors.OutOfRangeError:
                 return pred_file, feat_file
                 pass

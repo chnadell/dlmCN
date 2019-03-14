@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import Grid
 
-model_name = '20190307_214239'
+model_name = '20190311_183831'
 pred_file = os.path.join(os.path.dirname(__file__), 'data', 'test_pred_{}.csv'.format(model_name))
 truth_file = os.path.join(os.path.dirname(__file__), 'data', 'test_truth.csv')
 
