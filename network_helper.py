@@ -218,7 +218,9 @@ def get_parameters(model_dir):
     with open(file, 'r') as f:
         lines = f.readlines()
     for line in lines:
-        if line[:10] == 'fc_filters':
+        if line[:4] =='clip':
+            clip = [int(s) for s in line.split() if s.isdigit()]
+        elif line[:10] == 'fc_filters':
             line = replace_str(line)
             fc_filters = tuple([int(s) for s in line.split() if s.isdigit()])
         elif line[:11] == 'tconv_Fnums':
@@ -239,4 +241,4 @@ def get_parameters(model_dir):
         elif line[:9] =='reg_scale':
             line = replace_str(line)
             reg_scale = float(line[11:])
-    return fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch[0], reg_scale
+    return clip[0], fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch[0], reg_scale
