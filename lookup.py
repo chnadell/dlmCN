@@ -63,7 +63,7 @@ def import_data(data_dir, batch_size=100):
             print('getting geom from file {}'.format(file_name))
             with open(file_name, 'r') as file:
                 for line in file:
-                    geom = line.split(",")[2:26]  # [2:26] if using validation set for testing
+                    geom = line.split(",")  # [2:26] if using validation set for testing
                     # print(geom, np.shape(geom))
                     assert len(geom) == 8 + 16, "expected geometry vector of length 8+16, got length {}".format(len(geom))
                     yield geom
@@ -266,7 +266,7 @@ if __name__=="__main__":
     # for main library computation
     main(data_dir=os.path.join('.', 'dataGrid', 'gridFiles'),
          lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
-         model_name=modelNum, batch_size=10000)
+         model_name=modelNum, batch_size=20000)
 
     # define test sstar, see ML\lookupTest\findTestSpectra.nb
     # spec = [None for i in range(300)]

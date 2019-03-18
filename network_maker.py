@@ -296,7 +296,7 @@ class CnnNetwork(object):
                     # network occasionally predicts value slightly outside [0,1], so clip these out
                     # then map [0,1] --> [0,255], int
                     preduint64 = np.array([np.round(x*255) for x in np.clip(pred_batch, a_min=0, a_max=1)]).astype('uint')
-                    f = os.path.join(pred_file, file_prefix + str(file_cnt).zfill(4) + '.npy')
+                    f = os.path.join(pred_file, file_prefix + str(file_cnt).zfill(5) + '.npy')
                     np.save(f, preduint64, allow_pickle=False)
                     file_cnt+=1
             except tf.errors.OutOfRangeError:
