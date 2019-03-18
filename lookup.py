@@ -63,7 +63,7 @@ def import_data(data_dir, batch_size=100):
             print('getting geom from file {}'.format(file_name))
             with open(file_name, 'r') as file:
                 for line in file:
-                    geom = line.split(",")  # [2:26] if using validation set for testing
+                    geom = line.split(",")[2:26]  # [2:26] if using validation set for testing
                     # print(geom, np.shape(geom))
                     assert len(geom) == 8 + 16, "expected geometry vector of length 8+16, got length {}".format(len(geom))
                     yield geom
@@ -82,7 +82,7 @@ def import_data(data_dir, batch_size=100):
 
 
 # generate predictions with the given model and save them to a spectrum library file
-def main(data_dir, grid_dir, model_name, batch_size=10):
+def main(data_dir, lib_dir, model_name, batch_size=10):
     ckpt_dir = os.path.join(os.path.dirname(__file__), 'models', model_name)
     clip, fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch, \
     reg_scale = network_helper.get_parameters(ckpt_dir)
@@ -99,12 +99,12 @@ def main(data_dir, grid_dir, model_name, batch_size=10):
                                     tconv_filters=tconv_filters, make_folder=False)
 
     print('defining save file')
-    save_file = os.path.join('.', grid_dir)
+    save_file = os.path.join('.', lib_dir)
 
     # evaluate the model for each geometry in the grid file
     print('executing the model ...')
-    pred_file, feat_file = ntwk.predictBin(pred_init_op, ckpt_dir=ckpt_dir, model_name=model_name, save_file=save_file)
-    return pred_file, feat_file
+    pred_file = ntwk.predictBin3(pred_init_op, ckpt_dir=ckpt_dir, model_name=model_name, save_file=save_file)
+    return pred_file
 
 def lookup(sstar, library_path, candidate_num):
     candidates = []
@@ -247,17 +247,26 @@ def lookupBin(sstar, library_path, geometries_path, candidate_num):
     return candidates, geoms
 
 if __name__=="__main__":
-    gen_data(
-        os.path.join('.', 'dataGrid', 'gridFiles'), param_bounds=np.array([
-                                                             [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2],
-                                                             [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
-        spacings=[.8,.8,.8,.8,.8,.8,.8,.8])
+    # gen_data(
+    #     os.path.join('.', 'dataGrid', 'gridFiles'), param_bounds=np.array([
+    #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2],
+    #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
+    #     spacings=[.8,.8,.8,.8,.8,.8,.8,.8])
     modelNum = '20190311_183831'
     # import_data(os.path.join('.', 'dataIn', 'eval'), os.path.join('.', 'dataGrid'), batch_size=100, shuffle_size=100)
 
+    # test library computation
+    # main_start = time.time()
+    # main(data_dir=os.path.join('.', 'dataIn/eval'),
+    #      grid_dir='dataGrid',
+    #      model_name=modelNum,
+    #      batch_size=1000)
+    # print('main test time is {}'.format(time.time()-main_start))
+
+    # for main library computation
     main(data_dir=os.path.join('.', 'dataGrid', 'gridFiles'),
-         grid_dir=os.path.join('D:\dlmData', 'library' + str(modelNum)),
-         model_name=modelNum, batch_size=1000)
+         lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
+         model_name=modelNum, batch_size=10000)
 
     # define test sstar, see ML\lookupTest\findTestSpectra.nb
     # spec = [None for i in range(300)]

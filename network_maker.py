@@ -226,24 +226,79 @@ class CnnNetwork(object):
             sess.run(pred_init_op)
             pred_file = os.path.join(save_file, 'test_pred_{}'.format(model_name))
             feat_file = os.path.join(save_file, 'test_feat_{}'.format(model_name) + '.csv')
-            with open(pred_file, 'wb'):
-                pass
+
             try:
                 start = time.time()
                 cnt = 1
                 while True:
-                    with open(pred_file, 'ab') as f1, open(feat_file, 'a') as f2:
+                    with open(pred_file, 'ab') as f1:
                         pred_batch, features_batch = sess.run([self.logits, self.features])
                         for pred, features in zip(pred_batch, features_batch):
-                            preduint64 = [int(np.round(x*255)) for x in np.clip(pred, a_min=0, a_max=1)]  # network
-                            # occasionally predicts a slightly negative value, so clip these out
+                            # occasionally predicts a slightly negative value, so clip these out network
+                            preduint64 = [int(np.round(x*255)) for x in np.clip(pred, a_min=0, a_max=1)]
                             pred_bin = struct.pack("B"*len(preduint64), *preduint64)
                             f1.write(pred_bin)
-                            features_str = ','.join([str(ftr) for ftr in features])
-                            f2.write(features_str + '\n')
-                            cnt += 1
-                            if (cnt % 1000000) == 0:
-                                print('cnt is {}, minutes elapsed is {}'.format(cnt, np.round(time.time()-start)/60))
+                            # features_str = ','.join([str(ftr) for ftr in features])
+                            # f2.write(features_str + '\n')
+                            # cnt += 1
+                            # if (cnt % 1000000) == 0:
+                            #     print('cnt is {}, minutes elapsed is {}'.format(cnt, np.round(time.time()-start)/60))
             except tf.errors.OutOfRangeError:
                 return pred_file, feat_file
+                pass
+
+    def predictBin2(self, pred_init_op, ckpt_dir, save_file=os.path.join(os.path.dirname(__file__), 'dataGrid'),
+                model_name=''):
+        """
+        Evaluate the model, and save predictions to binary save_file
+        :param ckpt_dir directory
+        :param save_file: full path to pred file
+        :param model_name: name of the model
+        :return:
+        """
+        with tf.Session() as sess:
+            self.load(sess, ckpt_dir)
+            sess.run(pred_init_op)
+            pred_file = os.path.join(save_file, 'test_pred_{}'.format(model_name))
+
+            try:
+                while True:
+                    with open(pred_file, 'ab') as f1:
+                        pred_batch = sess.run(self.logits)
+                        pred_batch = pred_batch.flatten()
+                        # occasionally predicts a slightly negative value, so clip these out network
+                        preduint64 = [int(np.round(x*255)) for x in np.clip(pred_batch, a_min=0, a_max=1)]
+                        pred_bin = struct.pack("B"*len(preduint64), *preduint64)
+                        f1.write(pred_bin)
+            except tf.errors.OutOfRangeError:
+                return pred_file,
+                pass
+
+# write it to a number of different files which are smaller, using np.save()
+    def predictBin3(self, pred_init_op, ckpt_dir, save_file=os.path.join(os.path.dirname(__file__), 'dataGrid'),
+                model_name=''):
+        """
+        Evaluate the model, and save predictions to binary save_file
+        :param ckpt_dir directory
+        :param save_file: full path to pred file
+        :param model_name: name of the model
+        :return:
+        """
+        with tf.Session() as sess:
+            self.load(sess, ckpt_dir)
+            sess.run(pred_init_op)
+            pred_file = os.path.join(save_file)
+            file_prefix = 'test_pred_{}_'.format(model_name)
+            try:
+                file_cnt = 0
+                while True:
+                    pred_batch = sess.run(self.logits)
+                    # network occasionally predicts value slightly outside [0,1], so clip these out
+                    # then map [0,1] --> [0,255], int
+                    preduint64 = np.array([np.round(x*255) for x in np.clip(pred_batch, a_min=0, a_max=1)]).astype('uint')
+                    f = os.path.join(pred_file, file_prefix + str(file_cnt).zfill(4) + '.npy')
+                    np.save(f, preduint64, allow_pickle=False)
+                    file_cnt+=1
+            except tf.errors.OutOfRangeError:
+                return pred_file,
                 pass
