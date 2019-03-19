@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 matplotlib.use('TkAgg')
 from itertools import islice
 import struct
+import pickle
 
 # generate geometric parameters for the grid and save them in a file
 def gen_data(out_path, param_bounds, spacings):
@@ -156,10 +157,12 @@ def lookup(sstar, library_path, candidate_num):
     plt.show()
     return candidates
 
-def lookupBin(sstar, library_path, geometries_path, candidate_num):
+def lookupBin(sstar, lib_dir, geometries_path, candidate_num):
     candidates = []
     start = time.time()
 
+
+    # extract the keypoints from sstar
     sstar_keyPoints = []
     for starcnt, value in enumerate(sstar):  # extract the defined points of sstar
         if value is not None:
@@ -177,7 +180,7 @@ def lookupBin(sstar, library_path, geometries_path, candidate_num):
     batch_cnt = 0
     spec_cnt = 0
     simult_spectra = 2  # the number of spectra to read from the file at a time
-    with open(library_path, 'rb') as lib:
+    with open(lib_dir, 'rb') as lib:
         structobj = struct.Struct('B'*(300*simult_spectra))
         for byte_set in byte_yield(lib, byte_num=300*simult_spectra):  # needs exact length of a spectrum
             spectrum_batch = structobj.unpack(byte_set)  # unpack a single unsigned char to [0, 255]
@@ -246,6 +249,90 @@ def lookupBin(sstar, library_path, geometries_path, candidate_num):
     plt.show()
     return candidates, geoms
 
+
+# rewrite for multi-file format (predictBin3() )
+def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold):
+    candidates = []
+    start = time.time()
+
+    lib_files = os.listdir(lib_dir)
+
+    # extract the keypoints from sstar
+    sstar_keyPoints = []
+    for starcnt, value in enumerate(sstar):  # extract the defined points of sstar
+        if value is not None:
+            sstar_keyPoints.append((starcnt, value))
+
+    spec_cnt = 0
+    batch_cnt = 0
+    for file in lib_files:
+        with open(os.path.join(lib_dir, file), 'rb') as lib:
+            spectra_batch = np.load(lib)
+            batch_cnt += 1
+            if batch_cnt > 5 and batch_cnt % 100 == 0:
+                print('analyzing batch {}, best MSE is {}, time taken is {}'.format(batch_cnt,
+                                                                                   np.round(candidates[0][1], 4),
+                                                                                   time.time()-start))
+            # consider each spectrum in the batch one at a time
+            for spectrum in spectra_batch:
+                spec_cnt += 1
+                # convert back to floats on [0, 1]
+                assert len(spectrum) == 300
+
+                # calculate mse with desired spectrum
+                errors = []
+                for index, value in sstar_keyPoints:
+                    errors.append((spectrum[index]-value)**2)
+                mse = np.mean(errors)
+
+                if len(candidates) < candidate_num:  # then we need more candidates, so append
+                    candidates.append([spectrum, mse, spec_cnt])
+                else:  # see if this spectrum is better than any of the current candidates
+                    for candidate in candidates:
+                        if candidate[1] > mse:
+                            candidates.append([spectrum, mse, spec_cnt])
+                            candidates.sort(key=lambda x: x[1])
+                            candidates = candidates[:candidate_num]  # take only the candidates with the lowest error
+                            break
+            if candidates[0][1] < threshold:
+                print('threshold {} reached, ending search.'.format(threshold))
+                break
+    print('total search time taken is {}'.format(np.round(time.time() - start, 4)))
+    #convert to arrays so we can slice
+    sstar_keyPoints = np.array(sstar_keyPoints)
+    candidates = np.array(candidates)
+
+    # get the geometric values from the file of features
+    spec_indices = candidates[:, 2]
+    print('spec_indices are {}'.format(spec_indices))
+    geom_strings = []
+    geom_cnt = 0
+    with open(geometries_path, 'r') as geom_file:
+        for line in geom_file:
+            geom_cnt += 1
+            if geom_cnt in spec_indices:
+                geom_strings.append(line)
+                if len(geom_strings) == len(candidates):
+                    break
+    geom_strings_split = [geometries.split(',') for geometries in geom_strings]
+    geoms = []
+    for geom_set in geom_strings_split:
+        geoms.append([float(string) for string in geom_set])
+
+    # rearrange geom elements so that they match the order of candidates (sorted by MSE)
+    indices=sorted(range(len(candidates)), key=lambda k: candidates[k, 2])
+    geoms = [geoms[i] for i in indices]
+    print('geom_cnt is {}'.format(geom_cnt))
+    print('geometries are \n {}'.format(np.array(geoms)))
+
+    # plot the defined sstar points along with the candidate
+    plt.scatter(sstar_keyPoints[:, 0],
+                sstar_keyPoints[:, 1])
+    for candidate in candidates[:, 0]:
+        plt.plot(candidate)
+    plt.show()
+    return candidates, geoms
+
 if __name__=="__main__":
     # gen_data(
     #     os.path.join('.', 'dataGrid', 'gridFiles'), param_bounds=np.array([
@@ -264,19 +351,28 @@ if __name__=="__main__":
     # print('main test time is {}'.format(time.time()-main_start))
 
     # for main library computation
-    main(data_dir=os.path.join('.', 'dataGrid', 'gridFiles'),
-         lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
-         model_name=modelNum, batch_size=20000)
+    # main(data_dir=os.path.join('.', 'dataGrid', 'gridFiles'),
+    #      lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
+    #      model_name=modelNum, batch_size=20000)
 
-    # define test sstar, see ML\lookupTest\findTestSpectra.nb
-    # spec = [None for i in range(300)]
-    # spec[50] = int(.7*255)
-    # spec[140] = int(.2*255)
-    # spec[250] = int(.1*255)
-    # cand = lookupBin(sstar=spec,
-    #                  library_path=os.path.join('.', 'dataGrid', 'test_pred_' + modelNum),
-    #                  geometries_path=os.path.join('.', 'dataGrid', 'test_feat_{}'.format(modelNum) + '.csv'),
-    #                  candidate_num=3)
+    #define test sstar, see ML\lookupTest\findTestSpectra.nb
+    spec = [None for i in range(300)]
+    spec[25] = int(0.66 * 255)
+    spec[75] = int(0.77 * 255)
+    spec[100] = int(0.69 * 255)
+    spec[150] = int(0.7 * 255)
+    spec[175] = int(0.53 * 255)
+    cand = lookupBin2(sstar=spec,
+                      lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
+                      geometries_path=os.path.join('.', 'dataGrid', 'gridFiles', 'grid.csv'),
+                      candidate_num=5,
+                      threshold=154)
+
+    save_dir = os.path.join('.', 'dataGrid', 'candSave')
+    with open(os.path.join(save_dir, 'lookup_' + time.strftime('%Y%m%d_%H%M%S', time.gmtime())+'.pkl'), 'wb') as f:
+        pickle.dump(str([spec, cand]), file=f)
+
+
 
     # # test of usigned integer spectra
     # practice_file = os.path.join('.', 'dataIn', 'orig', 'bp5_OutMod.csv')
