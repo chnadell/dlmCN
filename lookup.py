@@ -320,7 +320,7 @@ def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold):
         geoms.append([float(string) for string in geom_set])
 
     # rearrange geom elements so that they match the order of candidates (sorted by MSE)
-    indices=sorted(range(len(candidates)), key=lambda k: candidates[k, 2])
+    indices = sorted(range(len(candidates)), key=lambda k: candidates[k, 2])
     geoms = [geoms[i] for i in indices]
     print('geom_cnt is {}'.format(geom_cnt))
     print('geometries are \n {}'.format(np.array(geoms)))
@@ -334,15 +334,15 @@ def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold):
     return candidates, geoms
 
 if __name__=="__main__":
-    gen_data(
-        os.path.join('.', 'dataGrid', 'gridFiles'), param_bounds=np.array([
-                                                             [30, 55],  [30, 55],  [30, 55],  [30, 55],
-                                                             [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
-        spacings=[2.2, 2.2, 2.2, 2.2, .8, .8, .8, .8])
+    # gen_data(
+    #     os.path.join('.', 'dataGrid', 'gridFiles'), param_bounds=np.array([
+    #                                                          [30, 55],  [30, 55],  [30, 55],  [30, 55],
+    #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
+    #     spacings=[2,2,2,2, .8, .8, .8, .8])
     modelNum = '20190311_183831'
     # import_data(os.path.join('.', 'dataIn', 'eval'), os.path.join('.', 'dataGrid'), batch_size=100, shuffle_size=100)
 
-    # test library computation
+    ## test library computation
     # main_start = time.time()
     # main(data_dir=os.path.join('.', 'dataIn/eval'),
     #      grid_dir='dataGrid',
@@ -350,34 +350,35 @@ if __name__=="__main__":
     #      batch_size=1000)
     # print('main test time is {}'.format(time.time()-main_start))
 
-    # for main library computation
+    # ## for main library computation
     # main(data_dir=os.path.join('.', 'dataGrid', 'gridFiles'),
     #      lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
     #      model_name=modelNum, batch_size=20000)
 
     #define test sstar, see ML\lookupTest\findTestSpectra.nb
-    # spec = [None for i in range(300)]
-    # spec[65] = int(0.56 * 255)
-    # spec[69] = int(0.48 * 255)
-    # spec[71] = int(0.42 * 255)
-    # spec[76] = int(0.33 * 255)
-    # spec[79] = int(0.26 * 255)
-    # spec[82] = int(0.2 * 255)
-    # spec[89] = int(0.21 * 255)
-    # spec[91] = int(0.28 * 255)
-    # spec[98] = int(0.34 * 255)
-    # spec[103] = int(0.4 * 255)
-    # spec[109] = int(0.46 * 255)
-    # spec[117] = int(0.51 * 255)
-    # cand = lookupBin2(sstar=spec,
-    #                   lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
-    #                   geometries_path=os.path.join('.', 'dataGrid', 'gridFiles', 'grid.csv'),
-    #                   candidate_num=5,
-    #                   threshold=50)
-    #
-    # save_dir = os.path.join('.', 'dataGrid', 'candSave')
-    # with open(os.path.join(save_dir, 'lookup_' + time.strftime('%Y%m%d_%H%M%S', time.gmtime())+'.pkl'), 'wb') as f:
-    #     pickle.dump(str([spec, cand]), file=f)
+    spec = [None for i in range(300)]
+    spec[212] = int(0.12 * 255)
+    spec[221] = int(0.21 * 255)
+    spec[232] = int(0.26 * 255)
+    spec[235] = int(0.32 * 255)
+    spec[236] = int(0.38 * 255)
+    spec[237] = int(0.42 * 255)
+    spec[240] = int(.5 * 255)
+    spec[242] = int(0.5 * 255)
+    spec[242] = int(0.41 * 255)
+    spec[241] = int(0.36 * 255)
+    spec[248] = int(0.23 * 255)
+    spec[252] = int(0.18 * 255)
+    spec[255] = int(0.16 * 255)
+    cand = lookupBin2(sstar=spec,
+                      lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
+                      geometries_path=os.path.join('.', 'dataGrid', 'gridFiles', 'grid.csv'),
+                      candidate_num=5,
+                      threshold=70)
+
+    save_dir = os.path.join('.', 'dataGrid', 'candSave')
+    with open(os.path.join(save_dir, 'lookup_' + time.strftime('%Y%m%d_%H%M%S', time.gmtime())+'.pkl'), 'wb') as f:
+        pickle.dump([spec, cand], file=f)
 
 
 
