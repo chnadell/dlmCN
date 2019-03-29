@@ -60,6 +60,57 @@ def addColumns(input_directory, output_directory, x_range, y_range):
             np.savetxt(file_out, data_out, delimiter=',', fmt='%f')
     print('done')
 
+# finds simulation files in input_dir and finds + saves the subset that adhere to the geometry contraints r_bound
+# and h_bound
+def gridShape(input_dir, output_dir, r_bounds, h_bounds):
+
+    files_to_filter = []
+    for file in os.listdir(input_dir):
+        if file.endswith('.csv'):
+            files_to_filter.append(os.path.join(input_dir, file))
+
+    print('filtering through {} files...'.format(len(files_to_filter)))
+    print('bounding all radii to [{}, {}], all heights to [{}, {}]...'.format(r_bounds[0], r_bounds[1],
+                                                                       h_bounds[0], h_bounds[1]))
+    lengthsPreFilter = []
+    lengthsPostFilter = []
+    for file in files_to_filter:
+        with open(file, 'r') as f:
+            geom_specs = pd.read_csv(f, delimiter=',', header=None).values
+            geoms_filt = []
+            geoms_filtComp = []
+            lengthsPreFilter.append(len(geom_specs))
+            for geom_spec in geom_specs:
+                hs = geom_spec[2:6]
+                rs = geom_spec[6:10]
+                if (np.all(hs >= h_bounds[0]) and np.all(hs <= h_bounds[1])) or \
+                   (np.all(rs >= r_bounds[0]) and np.all(rs <= r_bounds[1])):
+                    geoms_filt.append(geom_spec)
+                else:
+                    geoms_filtComp.append(geom_spec)
+            geoms_filt = np.array(geoms_filt)
+            geoms_filtComp = np.array(geoms_filtComp)
+            lengthsPostFilter.append(len(geoms_filt))
+            print('{} reduced from {} to {}, ({}%)'.format(file, lengthsPreFilter[-1],
+                                                           lengthsPostFilter[-1],
+                                                           100*np.round(lengthsPostFilter[-1]/lengthsPreFilter[-1], 4)))
+
+        save_file = os.path.join(output_dir, os.path.split(file)[-1][:-4] + '_filt')
+        # save the filtered geometries, for training
+        with open(save_file + '.csv', 'w+') as f:
+            np.savetxt(f, geoms_filt, delimiter=',', fmt='%f')
+
+        # save the all the goemetries filtered out, for evaluation
+        with open(save_file + 'Comp.csv', 'w+') as f:
+            np.savetxt(f, geoms_filtComp, delimiter=',', fmt='%f')
+
+
+    print('\nAcross all files: of original {} combos, {} remain ({}%)'.format(sum(lengthsPreFilter),
+                                                                              sum(lengthsPostFilter),
+                                                                              100*np.round(sum(lengthsPostFilter)/ \
+                                                                                       sum(lengthsPreFilter), 4)
+                                                                              ))
+
 
 def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0, batch_size=100,
                  shuffle_size=100, data_dir=os.path.dirname(__file__), rand_seed=1234):
@@ -141,11 +192,16 @@ if __name__ == '__main__':
     #            x_range=[i for i in range(0, 10)],
     #            y_range=[i for i in range(10, 2011)]
     #            )
-    addColumns(input_directory=os.path.join(".", "dataIn", 'orig'),
-               output_directory=os.path.join('.', "dataIn", "data_div"),
+    addColumns(input_directory=os.path.join(".", "dataIn", 'orig', 'outside_grid', 'set01Small'),
+               output_directory=os.path.join('.', "dataIn", "data_div", 'outside_grid', 'set01Small' ),
                x_range=[i for i in range(0, 10)],
                y_range=[i for i in range(10, 2011)]
                )
+
+
+    # gridShape(input_dir=os.path.join('.', 'dataIn', 'data_div'),
+    #           output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape03'),
+    #           r_bounds=(42., 48.6), h_bounds=(30., 46))
 
     # print('testing read_data')
     # read_data(input_size=2,
