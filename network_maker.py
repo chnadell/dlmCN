@@ -162,10 +162,8 @@ class CnnNetwork(object):
             self.load(sess, ckpt_dir)
             sess.run(valid_init_op)
             pred_file = os.path.join(save_file, 'test_pred_{}.csv'.format(model_name))
-            truth_file = os.path.join(save_file, 'test_truth.csv')
-            feat_file = os.path.join(save_file, 'test_feat.csv')
-            with open(pred_file, 'w'), open(truth_file, 'w'):
-                pass
+            truth_file = os.path.join(save_file, 'test_truth_{}.csv'.format(model_name))
+            feat_file = os.path.join(save_file, 'test_feat_{}.csv'.format(model_name))
             try:
                 while True:
                     with open(pred_file, 'a') as f1, open(truth_file, 'a') as f2, open(feat_file, 'a') as f3:
@@ -189,7 +187,7 @@ class CnnNetwork(object):
             self.load(sess, ckpt_dir)
             sess.run(pred_init_op)
             pred_file = os.path.join(save_file, 'test_pred_{}.csv'.format(model_name))
-            feat_file = os.path.join(save_file, 'test_feat.csv')
+            feat_file = os.path.join(save_file, 'test_feat_{}'.format(model_name) + '.csv')
             with open(pred_file, 'w'):
                 pass
             try:
