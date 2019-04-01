@@ -62,7 +62,7 @@ def addColumns(input_directory, output_directory, x_range, y_range):
 
 # finds simulation files in input_dir and finds + saves the subset that adhere to the geometry contraints r_bound
 # and h_bound
-def gridShape(input_dir, output_dir, r_bounds, h_bounds):
+def gridShape(input_dir, output_dir, shapeType, r_bounds, h_bounds):
 
     files_to_filter = []
     for file in os.listdir(input_dir):
@@ -70,7 +70,7 @@ def gridShape(input_dir, output_dir, r_bounds, h_bounds):
             files_to_filter.append(os.path.join(input_dir, file))
 
     print('filtering through {} files...'.format(len(files_to_filter)))
-    print('bounding all radii to [{}, {}], all heights to [{}, {}]...'.format(r_bounds[0], r_bounds[1],
+    print('bounds on radii: [{}, {}], bounds on heights: [{}, {}]...'.format(r_bounds[0], r_bounds[1],
                                                                        h_bounds[0], h_bounds[1]))
     lengthsPreFilter = []
     lengthsPostFilter = []
@@ -80,14 +80,35 @@ def gridShape(input_dir, output_dir, r_bounds, h_bounds):
             geoms_filt = []
             geoms_filtComp = []
             lengthsPreFilter.append(len(geom_specs))
-            for geom_spec in geom_specs:
-                hs = geom_spec[2:6]
-                rs = geom_spec[6:10]
-                if (np.all(hs >= h_bounds[0]) and np.all(hs <= h_bounds[1])) or \
-                   (np.all(rs >= r_bounds[0]) and np.all(rs <= r_bounds[1])):
-                    geoms_filt.append(geom_spec)
-                else:
-                    geoms_filtComp.append(geom_spec)
+            if shapeType=='corner':
+                print('cutting a corner of the data...')
+                for geom_spec in geom_specs:
+                    hs = geom_spec[2:6]
+                    rs = geom_spec[6:10]
+                    if (np.all(hs >= h_bounds[0]) and np.all(hs <= h_bounds[1])) or \
+                       (np.all(rs >= r_bounds[0]) and np.all(rs <= r_bounds[1])):
+                        geoms_filt.append(geom_spec)
+                    else:
+                        geoms_filtComp.append(geom_spec)
+            elif shapeType=='rCut':
+                print('cutting based on r values only...')
+                for geom_spec in geom_specs:
+                    rs = geom_spec[6:10]
+                    if (np.all(rs >= r_bounds[0]) and np.all(rs <= r_bounds[1])):
+                        geoms_filt.append(geom_spec)
+                    else:
+                        geoms_filtComp.append(geom_spec)
+            elif shapeType == 'hCut':
+                print('cutting based on h values only...')
+                for geom_spec in geom_specs:
+                    hs = geom_spec[2:6]
+                    if (np.all(hs >= h_bounds[0]) and np.all(hs <= h_bounds[1])):
+                        geoms_filt.append(geom_spec)
+                    else:
+                        geoms_filtComp.append(geom_spec)
+            else:
+                print('shapeType {} is not valid.'.format(shapeType))
+                return
             geoms_filt = np.array(geoms_filt)
             geoms_filtComp = np.array(geoms_filtComp)
             lengthsPostFilter.append(len(geoms_filt))
@@ -192,16 +213,18 @@ if __name__ == '__main__':
     #            x_range=[i for i in range(0, 10)],
     #            y_range=[i for i in range(10, 2011)]
     #            )
-    addColumns(input_directory=os.path.join(".", "dataIn", 'orig', 'outside_grid', 'set01Small'),
-               output_directory=os.path.join('.', "dataIn", "data_div", 'outside_grid', 'set01Small' ),
-               x_range=[i for i in range(0, 10)],
-               y_range=[i for i in range(10, 2011)]
-               )
+
+    # addColumns(input_directory=os.path.join(".", "dataIn", 'orig', 'outside_grid', 'set02Small'),
+    #            output_directory=os.path.join('.', "dataIn", "data_div", 'outside_grid', 'set02Small'),
+    #            x_range=[i for i in range(0, 10)],
+    #            y_range=[i for i in range(10, 2011)]
+    #            )
 
 
-    # gridShape(input_dir=os.path.join('.', 'dataIn', 'data_div'),
-    #           output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape03'),
-    #           r_bounds=(42., 48.6), h_bounds=(30., 46))
+    gridShape(input_dir=os.path.join('.', 'dataIn', 'data_div'),
+              output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape05'),
+              shapeType='hCut',
+              r_bounds=(0, 0), h_bounds=(38, 55))
 
     # print('testing read_data')
     # read_data(input_size=2,
