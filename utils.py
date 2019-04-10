@@ -175,7 +175,9 @@ def my_model_fn_tens(features, batch_size, clip,
     :return:
     """
     fc = features
-    fc = tensor_module(fc, fc_filters[0], batch_size, n_filter, n_branch)
+    tMod_out = tensor_module(fc, fc_filters[0], batch_size, n_filter, n_branch)
+    tf.summary.histogram("tMod_out", tMod_out[0])  # select 0th element or else histogram reduces the batch
+    fc = tMod_out
 
     for cnt, filters in enumerate(fc_filters):
         fc = tf.layers.dense(inputs=fc, units=filters, activation=tf.nn.leaky_relu, name='fc{}'.format(cnt),
@@ -194,10 +196,12 @@ def my_model_fn_tens(features, batch_size, clip,
         f = tf.Variable(tf.random_normal([up_fNum, up_filter, last_filter]))
         up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         last_filter = up_filter
+
     preconv = up
     up = tf.layers.conv1d(preconv, 1, 1, activation=None, name='conv_final')
     up = up[:, clip:-clip]
     up = tf.squeeze(up, axis=2)
     # up = tf.layers.dense(inputs=up, units=tconv_dims[-1], activation=tf.nn.leaky_relu, name='fc_final',
     #                           kernel_initializer=tf.random_normal_initializer(stddev=0.02))
-    return up, preconv, preTconv
+    merged_summary_op = tf.summary.merge_all()
+    return up, preconv, preTconv, merged_summary_op

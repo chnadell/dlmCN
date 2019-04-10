@@ -50,7 +50,7 @@ class CnnNetwork(object):
             os.makedirs(self.ckpt_dir)
             self.write_record()
 
-        self.logits, self.preconv, self.preTconv = self.create_graph()
+        self.logits, self.preconv, self.preTconv, self.merged_summary_op = self.create_graph()
         if self.labels==[]:
             print('labels list is empty')
         else:
@@ -129,7 +129,7 @@ class CnnNetwork(object):
         :param train_init_op: training dataset init operation
         :param step_num: number of steps to train
         :param hooks: hooks for monitoring the training process
-        :param write_summary: write summary into tensorboard of not
+        :param write_summary: write summary into tensorboard or not
         :return:
         """
         with tf.Session() as sess:
@@ -149,7 +149,7 @@ class CnnNetwork(object):
             self.save(sess)
 
     def evaluate(self, valid_init_op, ckpt_dir, save_file=os.path.join(os.path.dirname(__file__), 'data'),
-                 model_name=''):
+                 model_name='', write_summary=False):
         """
         Evaluate the model, and save predictions to save_file
         :param valid_init_op: validation dataset init operation
@@ -160,18 +160,36 @@ class CnnNetwork(object):
         """
         with tf.Session() as sess:
             self.load(sess, ckpt_dir)
+
+            if write_summary:
+                writer_path = os.path.join(ckpt_dir, 'evalSummary')
+                print("summary_writer directory is {}".format(writer_path))
+                activation_summary_writer = tf.summary.FileWriter(writer_path, sess.graph)
+            else:
+                activation_summary_writer = None
+
             sess.run(valid_init_op)
             pred_file = os.path.join(save_file, 'test_pred_{}.csv'.format(model_name))
             truth_file = os.path.join(save_file, 'test_truth_{}.csv'.format(model_name))
             feat_file = os.path.join(save_file, 'test_feat_{}.csv'.format(model_name))
+
+            eval_cnt = 0
             try:
                 while True:
                     with open(pred_file, 'a') as f1, open(truth_file, 'a') as f2, open(feat_file, 'a') as f3:
-                        pred, truth, features = sess.run([self.logits, self.labels, self.features])
+                        pred, truth, features, summary = sess.run([self.logits,
+                                                                   self.labels,
+                                                                   self.features,
+                                                                   self.merged_summary_op])
                         np.savetxt(f1, pred, fmt='%.3f')
                         np.savetxt(f2, truth, fmt='%.3f')
                         np.savetxt(f3, features, fmt='%.3f')
+                        if write_summary:
+                            activation_summary_writer.add_summary(summary, eval_cnt)
+                    eval_cnt += 1
             except tf.errors.OutOfRangeError:
+                activation_summary_writer.flush()
+                activation_summary_writer.close()
                 return pred_file, truth_file
 
     def predict(self, pred_init_op, ckpt_dir, save_file=os.path.join(os.path.dirname(__file__), 'dataGrid'),
