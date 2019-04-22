@@ -174,6 +174,7 @@ class CnnNetwork(object):
             feat_file = os.path.join(save_file, 'test_feat_{}.csv'.format(model_name))
 
             eval_cnt = 0
+            start_pred = time.time()
             try:
                 while True:
                     with open(pred_file, 'a') as f1, open(truth_file, 'a') as f2, open(feat_file, 'a') as f3:
@@ -181,6 +182,7 @@ class CnnNetwork(object):
                                                                    self.labels,
                                                                    self.features,
                                                                    self.merged_summary_op])
+
                         np.savetxt(f1, pred, fmt='%.3f')
                         np.savetxt(f2, truth, fmt='%.3f')
                         np.savetxt(f3, features, fmt='%.3f')
@@ -188,6 +190,7 @@ class CnnNetwork(object):
                             activation_summary_writer.add_summary(summary, eval_cnt)
                     eval_cnt += 1
             except tf.errors.OutOfRangeError:
+                print("evaluation took {} seconds".format(time.time() - start_pred))
                 activation_summary_writer.flush()
                 activation_summary_writer.close()
                 return pred_file, truth_file
