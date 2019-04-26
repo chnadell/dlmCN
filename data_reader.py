@@ -222,9 +222,9 @@ if __name__ == '__main__':
 
 
     gridShape(input_dir=os.path.join('.', 'dataIn', 'data_div'),
-              output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape05'),
-              shapeType='hCut',
-              r_bounds=(0, 0), h_bounds=(38, 55))
+              output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape010'),
+              shapeType='corner',
+              r_bounds=(42, 48.6), h_bounds=(30, 46))
 
     # print('testing read_data')
     # read_data(input_size=2,
