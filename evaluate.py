@@ -1,8 +1,8 @@
 import os
-import csv
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 import utils
 import data_reader
@@ -30,12 +30,12 @@ TRAIN_STEP = 45000
 LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
-X_RANGE = [i for i in range(2, 10 + 16)]
-Y_RANGE = [i for i in range(10 + 16, 2011 + 16)]
+X_RANGE = [i for i in range(2, 10+16)]
+Y_RANGE = [i for i in range(10+16, 2011+16)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
 FORCE_RUN =True
-MODEL_NAME = '20190311_213413'
+MODEL_NAME = '20190410_142248'
 
 
 def read_flag():
@@ -83,7 +83,7 @@ def compare_truth_pred(pred_file, truth_file):
 def main(flags):
     ckpt_dir = os.path.join(os.path.dirname(__file__), 'models', flags.model_name)
     clip, fc_filters, tconv_Fnums, tconv_dims, tconv_filters, n_filter, n_branch, reg_scale = network_helper.get_parameters(ckpt_dir)
-
+    print(ckpt_dir)
     # initialize data reader
     if len(tconv_dims) == 0:
         output_size = fc_filters[-1]
@@ -97,7 +97,6 @@ def main(flags):
                                                                            val_fold=flags.val_fold,
                                                                            batch_size=flags.batch_size,
                                                                            shuffle_size=flags.shuffle_size)
-
     # make network
     ntwk = network_maker.CnnNetwork(features, labels, utils.my_model_fn_tens, flags.batch_size,
                                     clip, fc_filters=fc_filters, tconv_Fnums=tconv_Fnums, tconv_dims=tconv_dims,
@@ -109,7 +108,10 @@ def main(flags):
     save_file = os.path.join(os.path.dirname(__file__), 'data', 'test_pred_{}.csv'.format(flags.model_name))
     if FORCE_RUN or (not os.path.exists(save_file)):
         print('Evaluating the model ...')
-        pred_file, truth_file = ntwk.evaluate(valid_init_op, ckpt_dir=ckpt_dir, model_name=flags.model_name)
+        pred_file, truth_file = ntwk.evaluate(valid_init_op,
+                                              ckpt_dir=ckpt_dir,
+                                              model_name=flags.model_name,
+                                              write_summary=True)
     else:
         pred_file = save_file
         truth_file = os.path.join(os.path.dirname(__file__), 'data', 'test_truth.csv')
