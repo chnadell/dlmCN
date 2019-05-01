@@ -6,6 +6,7 @@ import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
+import seaborn as sns
 
 
 def importData(directory, x_range, y_range):
@@ -30,6 +31,29 @@ def importData(directory, x_range, y_range):
     lbl = np.array(lbl, dtype='float32')
     return ftr, lbl
 
+
+# check that the data we're using is distributed uniformly and generate some plots
+def check_data(input_directory, col_range=range(2, 10), col_names=('h1','h2','h3','h4','r1','r2','r3','r4')):
+    for file in os.listdir(input_directory):
+        if file.endswith('.csv'):
+            print('\n histogram for file {}'.format(os.path.join(input_directory, file)))
+            with open(os.path.join(input_directory, file)) as f:
+                data = pd.read_csv(f, header=None, delimiter=',', usecols=col_range,
+                                   names=col_names)
+                for name in col_names:
+                    print('{} unique values for {}: {}'.format(len(data[name].unique()),
+                                                               name,
+                                                               np.sort(data[name].unique()))
+                          )
+                hist = data.hist(bins=13, figsize=(10, 5))
+                plt.tight_layout()
+                plt.show()
+                print('done plotting column data')
+
+
+
+# add columns of derived values to the input data
+# for now, just ratios of the inputs
 def addColumns(input_directory, output_directory, x_range, y_range):
     print('adding columns...')
     print('importing data')
@@ -221,10 +245,12 @@ if __name__ == '__main__':
     #            )
 
 
-    gridShape(input_dir=os.path.join('.', 'dataIn', 'data_div'),
-              output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape05'),
-              shapeType='hCut',
-              r_bounds=(0, 0), h_bounds=(38, 55))
+    # gridShape(input_dir=os.path.join('.', 'dataIn', 'data_div'),
+    #           output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape010'),
+    #           shapeType='corner',
+    #           r_bounds=(42, 48.6), h_bounds=(30, 46))
+
+    check_data(input_directory=os.path.join('.', 'dataIn', 'orig'), col_range=range(2, 10))
 
     # print('testing read_data')
     # read_data(input_size=2,
@@ -254,7 +280,7 @@ if __name__ == '__main__':
     #
     # print('downsampling output curves')
     # # resample via scipy method
-    # lblTest1 = scipy.signal.resample(lblTest, test_output_size , axis=1)
+    # lblTest1 = scipy.signal.resample(lblTest, test_output_size, axis=1)
     # lblTest1 = np.array([spec[:] for spec in lblTest1])
     #
     # # resample_poly
