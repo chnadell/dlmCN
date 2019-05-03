@@ -251,7 +251,7 @@ def lookupBin(sstar, lib_dir, geometries_path, candidate_num):
 
 
 # rewrite for multi-file format (predictBin3() )
-def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold):
+def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold, min_dist):
     candidates = []
     start = time.time()
 
@@ -288,14 +288,21 @@ def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold):
                 if len(candidates) < candidate_num:  # then we need more candidates, so append
                     candidates.append([spectrum, mse, spec_cnt])
                 else:  # see if this spectrum is better than any of the current candidates
-                    for candidate in candidates:
+                    for cand_cnt, candidate in enumerate(candidates):
+                        dist = np.linalg.norm(np.array(spectrum) - np.array(candidate[0]))
                         if candidate[1] > mse:
-                            candidates.append([spectrum, mse, spec_cnt])
+                            if dist < min_dist:
+                                candidates[cand_cnt] = [spectrum, mse, spec_cnt]
+                            else:
+                                candidates.append([spectrum, mse, spec_cnt])
                             candidates.sort(key=lambda x: x[1])
                             candidates = candidates[:candidate_num]  # take only the candidates with the lowest error
                             break
             if candidates[0][1] < threshold:
                 print('threshold {} reached, ending search.'.format(threshold))
+                break
+            elif spec_cnt > 220000000:
+                print('got through ~26% of dataset, ending search.')
                 break
     print('total search time taken is {}'.format(np.round(time.time() - start, 4)))
     #convert to arrays so we can slice
@@ -330,7 +337,6 @@ def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold):
                 sstar_keyPoints[:, 1])
     for candidate in candidates[:, 0]:
         plt.plot(candidate)
-    plt.show()
     return candidates, geoms
 
 if __name__=="__main__":
@@ -357,30 +363,30 @@ if __name__=="__main__":
 
     #define test sstar, see ML\lookupTest\findTestSpectra.nb
     spec = [None for i in range(300)]
-    spec[212] = int(0.12 * 255)
-    spec[221] = int(0.21 * 255)
-    spec[232] = int(0.26 * 255)
-    spec[235] = int(0.32 * 255)
-    spec[236] = int(0.38 * 255)
-    spec[237] = int(0.42 * 255)
-    spec[240] = int(.5 * 255)
-    spec[242] = int(0.5 * 255)
-    spec[242] = int(0.41 * 255)
-    spec[241] = int(0.36 * 255)
-    spec[248] = int(0.23 * 255)
-    spec[252] = int(0.18 * 255)
-    spec[255] = int(0.16 * 255)
+    spec[65] = int(0.56 * 255)
+    spec[69] = int(0.48 * 255)
+    spec[71] = int(0.42 * 255)
+    spec[76] = int(0.33 * 255)
+    spec[79] = int(0.26 * 255)
+    spec[82] = int(0.2 * 255)
+    spec[89] = int(0.21 * 255)
+    spec[91] = int(0.28 * 255)
+    spec[98] = int(0.34 * 255)
+    spec[103] = int(0.4 * 255)
+    spec[109] = int(0.46 * 255)
+    spec[117] = int(0.51 * 255)
     cand = lookupBin2(sstar=spec,
                       lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
                       geometries_path=os.path.join('.', 'dataGrid', 'gridFiles', 'grid.csv'),
-                      candidate_num=5,
-                      threshold=70)
+                      candidate_num=100,
+                      threshold=30,
+                      min_dist=5000)
 
-    save_dir = os.path.join('.', 'dataGrid', 'candSave')
+    save_dir = os.path.join('.', 'dataGrid', 'candSaveTest')
     with open(os.path.join(save_dir, 'lookup_' + time.strftime('%Y%m%d_%H%M%S', time.gmtime())+'.pkl'), 'wb') as f:
         pickle.dump([spec, cand], file=f)
-
-
+    print('done saving.')
+    plt.show()
 
     # # test of usigned integer spectra
     # practice_file = os.path.join('.', 'dataIn', 'orig', 'bp5_OutMod.csv')
