@@ -301,7 +301,7 @@ def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold, min_di
             if candidates[0][1] < threshold:
                 print('threshold {} reached, ending search.'.format(threshold))
                 break
-            elif spec_cnt > 220000000:
+            elif spec_cnt > 9166666:
                 print('got through ~26% of dataset, ending search.')
                 break
     print('total search time taken is {}'.format(np.round(time.time() - start, 4)))
@@ -379,8 +379,8 @@ if __name__=="__main__":
                       lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
                       geometries_path=os.path.join('.', 'dataGrid', 'gridFiles', 'grid.csv'),
                       candidate_num=100,
-                      threshold=30,
-                      min_dist=5000)
+                      threshold=0,
+                      min_dist=10000)
 
     save_dir = os.path.join('.', 'dataGrid', 'candSaveTest')
     with open(os.path.join(save_dir, 'lookup_' + time.strftime('%Y%m%d_%H%M%S', time.gmtime())+'.pkl'), 'wb') as f:
