@@ -35,7 +35,7 @@ Y_RANGE = [i for i in range(10+16, 2011+16)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
 FORCE_RUN =True
-MODEL_NAME = '20190410_142248'
+MODEL_NAME = '20190506_174752'
 
 
 def read_flag():
