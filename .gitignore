@@ -1,9 +1,13 @@
 data/*
 dataIn/*
+dataGrid/candSaveTest/*
+dataGrid/gridFiles/*
 models/*
 figs/*
 !dataIn/.gitkeep
 !data/.gitkeep
+!dataGrid/candSaveTest/.gitkeep
+!dataGrid/gridFiles/.gitkeep
 !models/.gitkeep
 !figs/.gitkeep
 README.ipynb
