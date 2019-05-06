@@ -232,7 +232,7 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     return features, labels, train_init_op, valid_init_op
 
 if __name__ == '__main__':
-    # addColumns(input_directory=os.path.join(".", "dataIn"),
+    # addColumns(input_directory=os.path.join(".", "dataIn", "orig"),
     #            output_directory=os.path.join('.', "dataIn", "data_div"),
     #            x_range=[i for i in range(0, 10)],
     #            y_range=[i for i in range(10, 2011)]
