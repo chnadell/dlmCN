@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import Grid
 
-model_name = '20190311_183831'
+model_name = '20190506_174752'
 pred_file = os.path.join(os.path.dirname(__file__), 'data', 'test_pred_{}.csv'.format(model_name))
-truth_file = os.path.join(os.path.dirname(__file__), 'data', 'test_truth.csv')
+truth_file = os.path.join(os.path.dirname(__file__), 'data', 'test_truth_{}.csv'.format(model_name))
 
 pred = np.loadtxt(pred_file, delimiter=' ')
 truth = np.loadtxt(truth_file, delimiter=' ')
