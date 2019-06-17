@@ -175,15 +175,16 @@ def my_model_fn_tens(features, batch_size, clip,
     :return:
     """
     fc = features
-    tMod_out = tensor_module(fc, fc_filters[0], batch_size, n_filter, n_branch)
-    tf.summary.histogram("tMod_out", tMod_out[0])  # select 0th element or else histogram reduces the batch
-    fc = tMod_out
+    #tMod_out = tensor_module(fc, fc_filters[0], batch_size, n_filter, n_branch)
+    # tf.summary.histogram("tMod_out", tMod_out[0])  # select 0th element or else histogram reduces the batch
+    #fc = tMod_out
 
     for cnt, filters in enumerate(fc_filters):
         fc = tf.layers.dense(inputs=fc, units=filters, activation=tf.nn.leaky_relu, name='fc{}'.format(cnt),
                              kernel_initializer=tf.random_normal_initializer(stddev=0.02),
                              kernel_regularizer=tf.contrib.layers.l2_regularizer(scale=reg_scale))
     preTconv = fc
+    tf.summary.histogram("preTconv", preTconv[0])  # select 0th element or else histogram reduces the batch
     up = tf.expand_dims(preTconv, axis=2)
     feature_dim = fc_filters[-1]
 
