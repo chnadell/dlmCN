@@ -13,11 +13,11 @@ plt.interactive(False)
 
 INPUT_SIZE = 2
 CLIP = 15
-FC_FILTERS = (100, 250, 500, 1000, 1500, 2000, 1000, 500, 165)
-TCONV_FNUMS = (6, 6)
-TCONV_DIMS = (165, 330)
-TCONV_FILTERS = (8, 4)
-N_FILTER = [15]
+FC_FILTERS = (100, 500, 1000, 1500, 500, 2000, 1000, 500, 165)
+TCONV_FNUMS = (4, 4, 4)
+TCONV_DIMS = (165, 165, 330)
+TCONV_FILTERS = (8, 4, 4)
+N_FILTER = [13]
 N_BRANCH = 2
 REG_SCALE = 5e-8
 CROSS_VAL = 5
@@ -31,11 +31,11 @@ LEARN_RATE = 1e-4
 DECAY_STEP = 20000
 DECAY_RATE = 0.05
 X_RANGE = [i for i in range(2, 10+16)]
-Y_RANGE = [i for i in range(10+16, 2011+16)]
+Y_RANGE = [i for i in range(10 +16, 2011 +16)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
 FORCE_RUN =True
-MODEL_NAME = '20190506_174752'
+MODEL_NAME = '20190612_152950'
 
 
 def read_flag():
