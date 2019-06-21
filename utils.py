@@ -1,5 +1,8 @@
 import tensorflow as tf
 
+# Generally, definitions of different layers of the network. Also, combinations of those layers
+# to form a full network graph
+
 # Set of functions for implementing the tensor module from Ng et al.
 # https://cs.stanford.edu/~danqi/papers/nips2013.pdf
 # closer to implementation by Ma et al.
@@ -91,7 +94,7 @@ def linear(input_, output_size, scope=None, stddev=0.02, bias_start=0.0, with_w=
         else:
             return tf.matmul(input_, matrix) + bias
 
-
+# older attempt, basic model with some dense layers, tconv, and conv.
 def my_model_fn(features, batch_size, fc_filters, tconv_dims, tconv_filters, n_filter, n_branch):
     """
     My customized model function
@@ -120,7 +123,7 @@ def my_model_fn(features, batch_size, fc_filters, tconv_dims, tconv_filters, n_f
 
     return tf.squeeze(up, axis=2)
 
-
+# linear model with leaky ReLU
 def my_model_fn_linear(features, batch_size, fc_filters, tconv_dims, tconv_filters):
     """
     My customized model function
@@ -134,7 +137,7 @@ def my_model_fn_linear(features, batch_size, fc_filters, tconv_dims, tconv_filte
         fc = tf.nn.leaky_relu(fc)
     return fc
 
-
+# linear with conv1d
 def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tconv_filters):
     """
     My customized model function
@@ -165,6 +168,9 @@ def my_model_fn_linear_conv1d(features, batch_size, fc_filters, tconv_dims, tcon
 
     return tf.squeeze(up, axis=2), preconv
 
+
+# current model, represents the architecture used in the dlm manuscript. Tensor layer is commented out since we
+# found that it actually hurt performance. Left it in the architecture so that we can easily see how it was done.
 def my_model_fn_tens(features, batch_size, clip,
                      fc_filters, tconv_fNums, tconv_dims, tconv_filters,
                      n_filter, n_branch, reg_scale):
@@ -179,6 +185,7 @@ def my_model_fn_tens(features, batch_size, clip,
     # tf.summary.histogram("tMod_out", tMod_out[0])  # select 0th element or else histogram reduces the batch
     #fc = tMod_out
 
+    # dense layers
     for cnt, filters in enumerate(fc_filters):
         fc = tf.layers.dense(inputs=fc, units=filters, activation=tf.nn.leaky_relu, name='fc{}'.format(cnt),
                              kernel_initializer=tf.random_normal_initializer(stddev=0.02),
@@ -188,6 +195,7 @@ def my_model_fn_tens(features, batch_size, clip,
     up = tf.expand_dims(preTconv, axis=2)
     feature_dim = fc_filters[-1]
 
+    # transposed convolutional layers
     last_filter = 1
     for cnt, (up_fNum, up_size, up_filter) in enumerate(zip(tconv_fNums, tconv_dims, tconv_filters)):
         assert up_size % feature_dim == 0, "up_size={} while feature_dim={} (cnt={})! " \
@@ -198,6 +206,7 @@ def my_model_fn_tens(features, batch_size, clip,
         up = conv1d_transpose_wrap(up, f, [batch_size, up_size, up_filter], stride, name='up{}'.format(cnt))
         last_filter = up_filter
 
+    # convolutional layer
     preconv = up
     up = tf.layers.conv1d(preconv, 1, 1, activation=None, name='conv_final')
     up = up[:, clip:-clip]
