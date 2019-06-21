@@ -277,15 +277,13 @@ def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold, min_di
             for spectrum in spectra_batch:
                 spec_cnt += 1
                 # convert back to floats on [0, 1]
-                assert len(spectrum) == 300
-
                 # calculate mse with desired spectrum
                 errors = []
                 for index, value in sstar_keyPoints:
                     errors.append((spectrum[index]-value)**2)
                 mse = np.mean(errors)
 
-                if len(candidates) < candidate_num:  # then we need more candidates, so append
+                if len(candidates) == 0:  # then we need more candidates, so append
                     candidates.append([spectrum, mse, spec_cnt])
                 else:  # see if this spectrum is better than any of the current candidates
                     for cand_cnt, candidate in enumerate(candidates):
@@ -301,7 +299,7 @@ def lookupBin2(sstar, lib_dir, geometries_path, candidate_num, threshold, min_di
             if candidates[0][1] < threshold:
                 print('threshold {} reached, ending search.'.format(threshold))
                 break
-            elif spec_cnt > 9166666:
+            elif spec_cnt > 212089987:  # 212089987 for 26% of total
                 print('got through ~26% of dataset, ending search.')
                 break
     print('total search time taken is {}'.format(np.round(time.time() - start, 4)))
@@ -345,10 +343,10 @@ if __name__=="__main__":
     #                                                          [30, 55],  [30, 55],  [30, 55],  [30, 55],
     #                                                          [42, 52.2], [42, 52.2], [42, 52.2], [42, 52.2]]),
     #     spacings=[2,2,2,2, .8, .8, .8, .8])
-    modelNum = '20190311_183831'
+    modelNum = '20190508_155720'
     # import_data(os.path.join('.', 'dataIn', 'eval'), os.path.join('.', 'dataGrid'), batch_size=100, shuffle_size=100)
 
-    ## test library computation
+    # test library computation
     # main_start = time.time()
     # main(data_dir=os.path.join('.', 'dataIn/eval'),
     #      grid_dir='dataGrid',
@@ -356,9 +354,9 @@ if __name__=="__main__":
     #      batch_size=1000)
     # print('main test time is {}'.format(time.time()-main_start))
 
-    # ## for main library computation
+    ## for main library computation
     # main(data_dir=os.path.join('.', 'dataGrid', 'gridFiles'),
-    #      lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
+    #      lib_dir=os.path.join('D:/dlmData/library20190506_174752'),
     #      model_name=modelNum, batch_size=20000)
 
     #define test sstar, see ML\lookupTest\findTestSpectra.nb
@@ -376,13 +374,13 @@ if __name__=="__main__":
     spec[109] = int(0.46 * 255)
     spec[117] = int(0.51 * 255)
     cand = lookupBin2(sstar=spec,
-                      lib_dir=os.path.join('D:/dlmData/library20190311_183831'),
+                      lib_dir=os.path.join('D:/dlmData/library20190508_155720'),
                       geometries_path=os.path.join('.', 'dataGrid', 'gridFiles', 'grid.csv'),
-                      candidate_num=100,
-                      threshold=0,
-                      min_dist=10000)
+                      candidate_num=2,
+                      threshold=50,
+                      min_dist=0)
 
-    save_dir = os.path.join('.', 'dataGrid', 'candSaveTest')
+    save_dir = os.path.join('.', 'dataGrid', 'candSave')
     with open(os.path.join(save_dir, 'lookup_' + time.strftime('%Y%m%d_%H%M%S', time.gmtime())+'.pkl'), 'wb') as f:
         pickle.dump([spec, cand], file=f)
     print('done saving.')
