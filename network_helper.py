@@ -207,7 +207,8 @@ class HookCurvePlotSummary(object):
         writer.flush()
         plt.close(fig)
 
-
+# extracts the network hyperparameters from a save file. Used during evaluation to reconstruct the graph that the saved
+# model weights will be loaded into.
 def get_parameters(model_dir):
     def replace_str(s):
         for char in [',', '(', ')', '[', ']']:

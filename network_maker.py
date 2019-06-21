@@ -181,7 +181,8 @@ class CnnNetwork(object):
                         pred, truth, features, summary = sess.run([self.logits,
                                                                    self.labels,
                                                                    self.features,
-                                                                   self.merged_summary_op])
+                                                                   self.merged_summary_op
+                                                                   ])
 
                         np.savetxt(f1, pred, fmt='%.3f')
                         np.savetxt(f2, truth, fmt='%.3f')
