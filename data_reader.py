@@ -156,7 +156,7 @@ def gridShape(input_dir, output_dir, shapeType, r_bounds, h_bounds):
                                                                                        sum(lengthsPreFilter), 4)
                                                                               ))
 
-
+# main function for reading the data in and returning a TF dataset
 def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0, batch_size=100,
                  shuffle_size=100, data_dir=os.path.dirname(__file__), rand_seed=1234):
     """
@@ -187,6 +187,8 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     print('total number of test samples is {}'.format(len(ftrTest)),
           'length of an input spectrum is {}'.format(len(lblTest[0])))
 
+    # different type of downsampling technique using a Fourier method. This added too much ringing on the edges of
+    # spectra so we moved to the pure decimation technique below
     # print('downsampling output curves')
     # # resample via scipy method
     # lblTest = scipy.signal.resample(lblTest, output_size + 20, axis=1)
@@ -194,7 +196,7 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     # lblTest = np.array([spec[10:-10] for spec in lblTest])
     # lblTrain = np.array([spec[10:-10] for spec in lblTrain])
 
-    print('downsampling output curves')
+    print('downsampling output curves by pure decimation')
     # resample the output curves so that there are not so many output points
     # drop the beginning of the curve so that we have a multiple of 300 points
     lblTrain = lblTrain[::, len(lblTest[0])-1800::6]
@@ -215,25 +217,30 @@ def read_data(input_size, output_size, x_range, y_range, cross_val=5, val_fold=0
     assert np.shape(ftrTrain)[0] == np.shape(lblTrain)[0]
     assert np.shape(ftrTest)[0] == np.shape(lblTest)[0]
 
+    # generate a TF dataset from the the numpy arrays
     dataset_train = tf.data.Dataset.from_tensor_slices((ftrTrain, lblTrain))
     dataset_valid = tf.data.Dataset.from_tensor_slices((ftrTest, lblTest))
+
     # shuffle then split into training and validation sets
     dataset_train = dataset_train.shuffle(shuffle_size)
 
-    dataset_train = dataset_train.repeat()
-    dataset_train = dataset_train.batch(batch_size, drop_remainder=True)
+    dataset_train = dataset_train.repeat()  # repeat data when we get to the end
+    dataset_train = dataset_train.batch(batch_size, drop_remainder=True)  # set batchsize for dataset object
     dataset_valid = dataset_valid.batch(batch_size, drop_remainder=True)
 
+    # define iterator so that we can actually iterate through the data in the TF dataset object
     iterator = tf.data.Iterator.from_structure(dataset_train.output_types, dataset_train.output_shapes)
     features, labels = iterator.get_next()
+
+    # TF dataset API is meh, you have to manually 'initialize'
     train_init_op = iterator.make_initializer(dataset_train)
     valid_init_op = iterator.make_initializer(dataset_valid)
 
     return features, labels, train_init_op, valid_init_op
 
 if __name__ == '__main__':
-    # addColumns(input_directory=os.path.join(".", "dataIn", "orig"),
-    #            output_directory=os.path.join('.', "dataIn", "data_div"),
+    # addColumns(input_directory=os.path.join(".", "dataIn", "eval"),
+    #            output_directory=os.path.join('.', "dataIn", "eval"),
     #            x_range=[i for i in range(0, 10)],
     #            y_range=[i for i in range(10, 2011)]
     #            )
@@ -246,7 +253,7 @@ if __name__ == '__main__':
 
 
     # gridShape(input_dir=os.path.join('.', 'dataIn', 'data_div'),
-    #           output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape010'),
+    #           output_dir=os.path.join('.', 'dataIn', 'gridShapeData', 'shape061'),
     #           shapeType='corner',
     #           r_bounds=(42, 48.6), h_bounds=(30, 46))
 

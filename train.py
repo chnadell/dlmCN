@@ -5,6 +5,8 @@ import data_reader
 import network_maker
 import network_helper
 
+
+# define hyperparameters for tinkering with the training settings
 INPUT_SIZE = 2
 CLIP = 15
 FC_FILTERS = (100, 500, 1000, 1500, 500, 2000, 1000, 500, 165)
@@ -29,7 +31,7 @@ Y_RANGE = [i for i in range(10 + 16, 2011 + 16)]
 # TRAIN_FILE = 'bp2_OutMod.csv'
 # VALID_FILE = 'bp2_OutMod.csv'
 
-
+# for command-line-based execution. Flexible for passing in arguments.
 def read_flag():
     parser = argparse.ArgumentParser()
     parser.add_argument('--input-size', type=int, default=INPUT_SIZE, help='input size')
@@ -63,8 +65,12 @@ def read_flag():
     flags = parser.parse_args()
     return flags
 
+# pass the flags into the main function, which will import data, run training, and save the model.
 def main(flags):
+
     # initialize data reader
+
+    # optional for what type of layer the network ends with
     if len(flags.tconv_dims) == 0:
         output_size = flags.fc_filters[-1]
     else:
