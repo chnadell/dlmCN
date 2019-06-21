@@ -3,13 +3,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import Grid
 
-model_name = '20190506_174752'
+
+# plots a bunch of predictions from a saved network (from the validation set).
+model_name = '20190508_155720'
 pred_file = os.path.join(os.path.dirname(__file__), 'data', 'test_pred_{}.csv'.format(model_name))
 truth_file = os.path.join(os.path.dirname(__file__), 'data', 'test_truth_{}.csv'.format(model_name))
 
 pred = np.loadtxt(pred_file, delimiter=' ')
 truth = np.loadtxt(truth_file, delimiter=' ')
 
+# generated a grid of plots of the network prediction vs the true value
 for fig_cnt in range(13):
     fig = plt.figure(figsize=(12, 8))
     grid = Grid(fig, rect=111, nrows_ncols=(4, 4), axes_pad=0.25, label_mode='L')
