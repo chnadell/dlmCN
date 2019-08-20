@@ -1,3 +1,4 @@
+For original, see https://github.com/bohaohuang/dlm
 # Deep Learning for Materials
 ## Installation
 Pre-requisite:
